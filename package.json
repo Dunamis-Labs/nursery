@@ -22,19 +22,20 @@
     "discover:plantmark": "tsx scripts/discover-plantmark-api.ts",
     "inspect:plantmark": "tsx scripts/inspect-plantmark-page.ts",
     "test:scraper": "tsx scripts/test-plantmark-scraper.ts",
+    "import:full": "dotenv -e .env -- tsx scripts/full-plantmark-import.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\""
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "typescript": "^5.3.3",
-    "prettier": "^3.2.4",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^8.56.0",
-    "tsx": "^4.7.0"
+    "prettier": "^3.2.4",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
   }
 }
-

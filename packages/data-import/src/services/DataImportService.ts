@@ -95,6 +95,7 @@ export class DataImportService {
       }
 
       // Process and import products
+      let skipped = 0;
       for (const product of products) {
         try {
           const importResult = await this.importProduct(product, jobId, options);
@@ -102,6 +103,9 @@ export class DataImportService {
             result.created++;
           } else if (importResult.updated) {
             result.updated++;
+          } else {
+            // Product exists but no changes detected
+            skipped++;
           }
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -113,7 +117,7 @@ export class DataImportService {
           });
         }
 
-        // Update job progress
+        // Update job progress (include skipped in processed count)
         await prisma.scrapingJob.update({
           where: { id: jobId },
           data: {
@@ -121,11 +125,15 @@ export class DataImportService {
             productsCreated: result.created,
             productsUpdated: result.updated,
             errors: result.errors as Prisma.InputJsonValue,
+            metadata: {
+              ...(job.metadata as Record<string, unknown> || {}),
+              skipped,
+            } as Prisma.InputJsonValue,
           },
         });
 
         // Check max products limit
-        if (options.maxProducts && result.created + result.updated >= options.maxProducts) {
+        if (options.maxProducts && result.created + result.updated + skipped >= options.maxProducts) {
           break;
         }
       }
@@ -222,7 +230,7 @@ export class DataImportService {
   /**
    * Import a single product into the database
    */
-  private async importProduct(
+  async importProduct(
     product: PlantmarkProduct,
     jobId: string,
     options?: ImportOptions
@@ -270,12 +278,27 @@ export class DataImportService {
     };
 
     if (existing) {
-      // Update existing product
-      await prisma.product.update({
-        where: { id: existing.id },
-        data: productData,
-      });
-      return { created: false, updated: true };
+      // Check if anything has changed
+      const hasChanges =
+        existing.name !== productData.name ||
+        existing.description !== productData.description ||
+        existing.price?.toString() !== productData.price?.toString() ||
+        existing.imageUrl !== productData.imageUrl ||
+        existing.botanicalName !== productData.botanicalName ||
+        existing.commonName !== productData.commonName ||
+        JSON.stringify(existing.images) !== JSON.stringify(productData.images);
+
+      if (hasChanges) {
+        // Update existing product with new data
+        await prisma.product.update({
+          where: { id: existing.id },
+          data: productData,
+        });
+        return { created: false, updated: true };
+      } else {
+        // No changes, skip update
+        return { created: false, updated: false };
+      }
     } else {
       // Create new product
       await prisma.product.create({ data: productData });
