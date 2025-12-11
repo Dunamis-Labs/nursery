@@ -20,7 +20,7 @@ export interface AnalyticsSearchData {
   avgBounceRate?: number;
 }
 
-export const adminApi = {
+export const admin = {
   // Scraping jobs
   async createScrapingJob(config: {
     source: string;

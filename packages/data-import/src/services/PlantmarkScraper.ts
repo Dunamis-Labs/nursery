@@ -243,8 +243,9 @@ export class PlantmarkScraper {
       }
       
       // Re-extract all products after scrolling
+      let allProducts = products;
       if (scrollAttempts > 0) {
-        products = await pageInstance.evaluate(() => {
+        allProducts = await pageInstance.evaluate(() => {
           const productElements = document.querySelectorAll('div[data-productid], .product-item[data-productid], ._ProductBoxWithLocation');
           const scrapedProducts: PlantmarkProduct[] = [];
 
@@ -304,6 +305,7 @@ export class PlantmarkScraper {
 
           return scrapedProducts;
         });
+        products = allProducts;
       }
       
       // Check for traditional pagination as fallback

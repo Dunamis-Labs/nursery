@@ -104,7 +104,7 @@ export class DataImportService {
           } else if (importResult.updated) {
             result.updated++;
           } else {
-            // Product exists but no changes detected
+            // Product exists but no changes detected (skipped)
             skipped++;
           }
         } catch (error) {
@@ -118,6 +118,7 @@ export class DataImportService {
         }
 
         // Update job progress (include skipped in processed count)
+        const currentJob = await prisma.scrapingJob.findUnique({ where: { id: jobId } });
         await prisma.scrapingJob.update({
           where: { id: jobId },
           data: {
@@ -126,7 +127,7 @@ export class DataImportService {
             productsUpdated: result.updated,
             errors: result.errors as Prisma.InputJsonValue,
             metadata: {
-              ...(job.metadata as Record<string, unknown> || {}),
+              ...((currentJob?.metadata as Record<string, unknown>) || {}),
               skipped,
             } as Prisma.InputJsonValue,
           },
