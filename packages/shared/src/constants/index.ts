@@ -1,0 +1,15 @@
+// Shared constants
+export const PRODUCT_TYPES = {
+  DIGITAL: 'DIGITAL',
+  DROPSHIPPED: 'DROPSHIPPED',
+  PHYSICAL: 'PHYSICAL',
+  BUNDLE: 'BUNDLE',
+} as const;
+
+export const AVAILABILITY_STATUS = {
+  IN_STOCK: 'IN_STOCK',
+  OUT_OF_STOCK: 'OUT_OF_STOCK',
+  PRE_ORDER: 'PRE_ORDER',
+  DISCONTINUED: 'DISCONTINUED',
+} as const;
+

@@ -1,0 +1,37 @@
+{
+  "name": "nursery",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Online Nursery Ecommerce Website - SEO-focused ecommerce platform with agent-driven content management",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web",
+    "start": "npm run start --workspace=apps/web",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "type-check": "npm run type-check --workspaces --if-present",
+    "db:generate": "npm run db:generate --workspace=packages/db",
+    "db:migrate": "npm run db:migrate --workspace=packages/db",
+    "db:push": "npm run db:push --workspace=packages/db",
+    "db:studio": "npm run db:studio --workspace=packages/db",
+    "db:seed": "tsx scripts/seed.ts",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\""
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "prettier": "^3.2.4",
+    "eslint": "^8.56.0",
+    "tsx": "^4.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}
+

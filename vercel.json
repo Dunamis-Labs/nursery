@@ -1,0 +1,25 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/daily-optimization",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-analysis",
+      "schedule": "0 3 * * 1"
+    },
+    {
+      "path": "/api/cron/content-refresh",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/experiment-monitoring",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/data-import",
+      "schedule": "0 1 * * *"
+    }
+  ]
+}
+

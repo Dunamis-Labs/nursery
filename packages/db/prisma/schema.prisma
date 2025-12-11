@@ -1,0 +1,221 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum ProductType {
+  DIGITAL
+  DROPSHIPPED
+  PHYSICAL
+  BUNDLE
+}
+
+enum AvailabilityStatus {
+  IN_STOCK
+  OUT_OF_STOCK
+  PRE_ORDER
+  DISCONTINUED
+}
+
+enum ProductSource {
+  SCRAPED
+  MANUAL
+  API
+}
+
+enum ContentStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum GuideType {
+  HOW_TO
+  CARE
+  SEASONAL
+  COMPARISON
+}
+
+// Models
+model Product {
+  id              String            @id @default(uuid())
+  name            String
+  slug            String            @unique
+  description     String?           @db.Text
+  productType     ProductType
+  price           Decimal           @db.Decimal(10, 2)
+  availability    AvailabilityStatus @default(IN_STOCK)
+  categoryId      String
+  category        Category          @relation(fields: [categoryId], references: [id])
+  source          ProductSource     @default(MANUAL)
+  sourceId        String?           // External ID from source (e.g., plantmark.com.au)
+  sourceUrl       String?
+  botanicalName   String?
+  commonName      String?
+  imageUrl        String?
+  images          Json?             // Array of image URLs
+  metadata        Json?             // Type-specific metadata
+  content         ProductContent?
+  faqs            FAQ[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([categoryId])
+  @@index([slug])
+  @@index([productType])
+  @@index([availability])
+}
+
+model Category {
+  id          String     @id @default(uuid())
+  name        String
+  slug        String     @unique
+  description String?    @db.Text
+  parentId    String?
+  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryTree")
+  products    Product[]
+  content     CategoryContent?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([slug])
+  @@index([parentId])
+}
+
+model ProductContent {
+  id                String   @id @default(uuid())
+  productId         String   @unique
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  detailedDescription String? @db.Text
+  growingRequirements String? @db.Text
+  careInstructions  String? @db.Text
+  uses              String? @db.Text
+  benefits          String? @db.Text
+  lastUpdatedAt     DateTime @default(now()) @updatedAt
+}
+
+model CategoryContent {
+  id          String   @id @default(uuid())
+  categoryId  String   @unique
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  description String?  @db.Text
+  tips        String?  @db.Text
+  updatedAt   DateTime @default(now()) @updatedAt
+}
+
+model FAQ {
+  id          String   @id @default(uuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  question    String
+  answer      String   @db.Text
+  displayOrder Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([productId])
+  @@index([displayOrder])
+}
+
+model BlogPost {
+  id          String        @id @default(uuid())
+  title       String
+  slug        String        @unique
+  excerpt     String?       @db.Text
+  content     String        @db.Text
+  author      String        @default("Agent")
+  status      ContentStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([slug])
+  @@index([status])
+  @@index([publishedAt])
+}
+
+model Guide {
+  id          String        @id @default(uuid())
+  title       String
+  slug        String        @unique
+  excerpt     String?       @db.Text
+  content     String        @db.Text
+  guideType   GuideType
+  author      String        @default("Agent")
+  status      ContentStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([slug])
+  @@index([guideType])
+  @@index([status])
+}
+
+model ApiKey {
+  id        String    @id @default(uuid())
+  key       String    @unique
+  name      String
+  permissions Json    // Array of permission strings
+  isActive  Boolean   @default(true)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([key])
+  @@index([isActive])
+}
+
+model ContentStrategy {
+  id              String   @id @default("current")
+  contentVelocity Json     // Target daily posts, priority types
+  seoFocus        Json     // Keywords, topics
+  optimization    Json     // Focus areas, experiment priorities
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+}
+
+model OptimizationOpportunity {
+  id              String   @id @default(uuid())
+  type            String   // content_optimization, content_creation, pattern_replication
+  priority        String   // high, medium, low
+  target          String   // Product ID, query, etc.
+  reason          String   @db.Text
+  suggestedActions Json    // Array of action types
+  status          String   @default("pending") // pending, in_progress, completed, dismissed
+  experimentId    String?  // If experiment created
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([priority])
+}
+
+model Experiment {
+  id          String    @id @default(uuid())
+  statsigId   String?   @unique
+  name        String
+  description String    @db.Text
+  targetId    String?   // Product ID, page ID, etc.
+  status      String    @default("active") // active, completed, paused
+  variants    Json      // Experiment variants
+  winner      String?   // Winning variation
+  startedAt   DateTime  @default(now())
+  endedAt     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@index([statsigId])
+}
+
