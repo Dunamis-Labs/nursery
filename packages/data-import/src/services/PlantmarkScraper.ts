@@ -94,27 +94,55 @@ export class PlantmarkScraper {
         timeout: 10000,
       });
 
-      // Extract product data
+      // Extract product data based on actual Plantmark structure
       const products = await pageInstance.evaluate(() => {
-        // TODO: Implement actual scraping logic based on Plantmark's HTML structure
-        // This is a placeholder that needs to be customized based on actual site structure
-        
-        const productElements = document.querySelectorAll('.product-item, [data-product], .product-card');
+        // Plantmark uses: <div class="_ProductBoxWithLocation product-item product-attributes" data-productid="6697">
+        const productElements = document.querySelectorAll('div[data-productid], .product-item[data-productid], ._ProductBoxWithLocation');
         const scrapedProducts: PlantmarkProduct[] = [];
 
         productElements.forEach((element) => {
-          const nameEl = element.querySelector('.product-name, h2, h3, [data-name]');
-          const priceEl = element.querySelector('.price, [data-price]');
+          const productId = element.getAttribute('data-productid');
+          if (!productId) return;
+
+          // Find product name - usually in a link or heading
+          const nameEl = element.querySelector('a[href*="/"], h2, h3, .product-name, [class*="name"]');
+          const linkEl = element.querySelector('a[href*="/"]');
           const imageEl = element.querySelector('img');
-          const linkEl = element.querySelector('a');
+          
+          // Try to find price - might be in various formats
+          const priceEl = element.querySelector('.price, [class*="price"], [data-price]');
+          
+          // Try to find botanical/common names
+          const botanicalEl = element.querySelector('[class*="botanical"], [data-botanical]');
+          const commonEl = element.querySelector('[class*="common"], [data-common]');
+          
+          // Try to find description
+          const descEl = element.querySelector('.description, [class*="desc"], p');
 
           if (nameEl) {
+            const name = nameEl.textContent?.trim() || '';
+            const href = linkEl?.getAttribute('href') || '';
+            const fullUrl = href.startsWith('http') ? href : `https://www.plantmark.com.au${href}`;
+            
+            // Extract price if available
+            let price: number | undefined;
+            if (priceEl) {
+              const priceText = priceEl.textContent?.replace(/[^0-9.]/g, '') || '';
+              if (priceText) {
+                price = parseFloat(priceText);
+              }
+            }
+
             scrapedProducts.push({
-              id: element.getAttribute('data-id') || '',
-              name: nameEl.textContent?.trim() || '',
-              price: priceEl ? parseFloat(priceEl.textContent?.replace(/[^0-9.]/g, '') || '0') : undefined,
-              imageUrl: imageEl?.getAttribute('src') || undefined,
-              sourceUrl: linkEl?.getAttribute('href') || '',
+              id: productId,
+              name,
+              sourceId: productId,
+              sourceUrl: fullUrl,
+              botanicalName: botanicalEl?.textContent?.trim(),
+              commonName: commonEl?.textContent?.trim(),
+              description: descEl?.textContent?.trim(),
+              price,
+              imageUrl: imageEl?.getAttribute('src') || imageEl?.getAttribute('data-src'),
             });
           }
         });
@@ -190,14 +218,16 @@ export class PlantmarkScraper {
    * Build product list URL
    */
   private buildProductListUrl(page: number, category?: string): string {
-    let url = `${this.config.baseUrl}/trees`;
+    // Use plant-finder page which shows all products
+    let url = `${this.config.baseUrl}/plant-finder`;
     
-    if (category) {
-      url += `#/category=${encodeURIComponent(category)}`;
-    }
-    
-    if (page > 1) {
-      url += `&page=${page}`;
+    // Note: Plantmark uses hash-based routing for filters
+    // Format: /plant-finder#/category=...&page=...
+    if (category || page > 1) {
+      const params = new URLSearchParams();
+      if (category) params.append('category', category);
+      if (page > 1) params.append('page', page.toString());
+      url += `#/${params.toString()}`;
     }
     
     return url;

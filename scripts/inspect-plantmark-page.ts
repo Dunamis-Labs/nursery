@@ -49,24 +49,26 @@ async function inspectPage() {
     });
   });
 
-  console.log('🌱 Inspecting Plantmark page structure...\n');
+  console.log('🌱 Inspecting Plantmark Plant Finder page...\n');
 
   try {
-    // Navigate to main page
-    console.log('1. Loading main page...');
-    await page.goto('https://www.plantmark.com.au', {
-      waitUntil: 'networkidle',
-      timeout: 30000,
+    // Navigate directly to plant-finder page
+    console.log('Loading plant-finder page: https://www.plantmark.com.au/plant-finder');
+    await page.goto('https://www.plantmark.com.au/plant-finder', {
+      waitUntil: 'domcontentloaded', // Less strict than networkidle
+      timeout: 60000, // Increased timeout
     });
-    await page.waitForTimeout(2000);
-
-    // Navigate to products page
-    console.log('2. Loading products page...');
-    await page.goto('https://www.plantmark.com.au/trees', {
-      waitUntil: 'networkidle',
-      timeout: 30000,
-    });
-    await page.waitForTimeout(3000);
+    
+    console.log('Page loaded, waiting for content...');
+    await page.waitForTimeout(5000); // Wait for dynamic content to load
+    
+    // Try to wait for specific elements that might indicate the page is ready
+    try {
+      await page.waitForSelector('body', { timeout: 10000 });
+      console.log('Page content detected');
+    } catch {
+      console.log('Continuing despite timeout...');
+    }
 
     // Check for embedded JSON data in page
     console.log('3. Checking for embedded data...');
@@ -133,16 +135,46 @@ async function inspectPage() {
     // Check page structure
     console.log('\n🏗️  Page Structure:');
     const structure = await page.evaluate(() => {
-      const productElements = document.querySelectorAll('[data-product], .product, .product-item, [class*="product"]');
-      const links = Array.from(document.querySelectorAll('a[href*="product"], a[href*="tree"]')).slice(0, 5);
+      // Look for various product-related selectors
+      const productSelectors = [
+        '[data-product]',
+        '.product',
+        '.product-item',
+        '[class*="product"]',
+        '[class*="plant"]',
+        '[class*="item"]',
+        '[data-plant]',
+        '.plant-card',
+        '.plant-item',
+      ];
+      
+      let productElements: Element[] = [];
+      productSelectors.forEach(selector => {
+        try {
+          const elements = document.querySelectorAll(selector);
+          productElements = productElements.concat(Array.from(elements));
+        } catch {
+          // Ignore invalid selectors
+        }
+      });
+      
+      const links = Array.from(document.querySelectorAll('a[href*="product"], a[href*="tree"], a[href*="plant"], a[href*="/p/"]')).slice(0, 10);
+      
+      // Check for search/filter inputs
+      const searchInputs = Array.from(document.querySelectorAll('input[type="search"], input[placeholder*="search" i], input[name*="search" i]'));
+      const filterElements = Array.from(document.querySelectorAll('[class*="filter"], [class*="category"], select'));
       
       return {
         productElementCount: productElements.length,
-        productElementSample: productElements.length > 0 ? productElements[0].outerHTML.substring(0, 200) : null,
+        productElementSample: productElements.length > 0 ? productElements[0].outerHTML.substring(0, 300) : null,
         productLinks: links.map(l => ({
           href: l.getAttribute('href'),
           text: l.textContent?.trim(),
         })),
+        searchInputs: searchInputs.length,
+        filterElements: filterElements.length,
+        pageTitle: document.title,
+        url: window.location.href,
       };
     });
 
