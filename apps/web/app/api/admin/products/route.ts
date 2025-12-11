@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth';
-import { prisma } from '@nursery/db';
+import { prisma, Prisma } from '@nursery/db';
 import { z } from 'zod';
 
 const createProductSchema = z.object({
@@ -27,8 +27,22 @@ async function handler(request: NextRequest) {
       const body = await request.json();
       const validatedData = createProductSchema.parse(body);
 
+      // Convert metadata to Prisma's InputJsonValue type and handle category relation
+      const { categoryId, metadata, images, ...restData } = validatedData;
+      
+      const productData: Prisma.ProductUncheckedCreateInput = {
+        ...restData,
+        categoryId,
+        metadata: metadata
+          ? (metadata as Prisma.InputJsonValue)
+          : undefined,
+        images: images
+          ? (images as Prisma.InputJsonValue)
+          : undefined,
+      };
+
       const product = await prisma.product.create({
-        data: validatedData,
+        data: productData,
         include: {
           category: true,
         },
