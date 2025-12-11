@@ -6,9 +6,11 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("POSTGRES_URL_NON_POOLING")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // directUrl is optional - only needed if using connection pooling
+  // Uncomment and set POSTGRES_URL_NON_POOLING if you need direct connections
+  // directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 // Enums

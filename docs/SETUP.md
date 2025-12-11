@@ -36,15 +36,20 @@ npm install
 
 2. Fill in your Supabase credentials in `.env`:
    ```env
-   # Use POSTGRES_PRISMA_URL for Prisma (direct connection)
+   # REQUIRED: Use POSTGRES_PRISMA_URL for Prisma (direct connection)
+   # Copy this value from your Supabase project settings > Database > Connection string
    DATABASE_URL="your-postgres-prisma-url-from-supabase"
    
-   # Or use POSTGRES_URL_NON_POOLING
-   POSTGRES_URL_NON_POOLING="your-postgres-url-non-pooling-from-supabase"
+   # Optional: For connection pooling (uncomment if needed)
+   # POSTGRES_URL_NON_POOLING="your-postgres-url-non-pooling-from-supabase"
    
-   # Supabase client-side (public)
+   # Supabase client-side (public - safe to expose in browser)
    NEXT_PUBLIC_SUPABASE_URL="your-supabase-url"
    NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="your-publishable-key"
+   
+   # Supabase server-side (private - keep secret)
+   SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
    
    # Generate a secure API key for agent access
    ADMIN_API_KEY="$(openssl rand -hex 32)"
@@ -52,6 +57,8 @@ npm install
    # Generate a secure cron secret
    CRON_SECRET="$(openssl rand -hex 32)"
    ```
+
+   **Important:** You must set `DATABASE_URL` before running migrations. Copy the `POSTGRES_PRISMA_URL` value from your Supabase project settings.
 
 ## Step 5: Generate Prisma Client
 
