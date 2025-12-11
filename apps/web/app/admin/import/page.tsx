@@ -137,10 +137,26 @@ export default function ImportDashboard() {
       
       setCurrentJob(response);
       setImportProgress({ current: 0, total: importOptions.maxProducts });
+      fetchRecentProducts();
     } catch (error) {
       console.error('Error starting import:', error);
       setIsImporting(false);
       alert('Failed to start import. Check console for details.');
+    }
+  };
+
+  const stopImport = async () => {
+    if (!currentJob) return;
+    
+    try {
+      await adminApiClient.post(`/admin/import-jobs/${currentJob.id}/stop`, {});
+      setIsImporting(false);
+      setCurrentJob(null);
+      fetchJobs();
+      alert('Import stopped. The current product being processed will complete.');
+    } catch (error) {
+      console.error('Error stopping import:', error);
+      alert('Failed to stop import. Check console for details.');
     }
   };
 
@@ -212,37 +228,51 @@ export default function ImportDashboard() {
               </label>
             </div>
           </div>
-          <button
-            onClick={startImport}
-            disabled={isImporting}
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {isImporting ? 'Importing...' : 'Start Import'}
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={startImport}
+              disabled={isImporting}
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {isImporting ? 'Importing...' : 'Start Import'}
+            </button>
+            {isImporting && (
+              <button
+                onClick={stopImport}
+                className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                Stop Import
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Current Import Status */}
-        {currentJob && isImporting && (
+        {currentJob && (isImporting || currentJob.status === 'RUNNING') && (
           <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4">Current Import</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Current Import</h2>
+              <span className="text-sm text-gray-500">Job ID: {currentJob.id.substring(0, 8)}...</span>
+            </div>
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between mb-2">
                   <span className="text-sm font-medium text-gray-700">Progress</span>
                   <span className="text-sm text-gray-600">
-                    {importProgress.current} / {importProgress.total}
+                    {importProgress.current} / {importProgress.total || '?'}
+                    {importProgress.total > 0 && ` (${Math.round((importProgress.current / importProgress.total) * 100)}%)`}
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-4">
                   <div
                     className="bg-blue-600 h-4 rounded-full transition-all duration-300"
                     style={{
-                      width: `${importProgress.total > 0 ? (importProgress.current / importProgress.total) * 100 : 0}%`,
+                      width: `${importProgress.total > 0 ? Math.min((importProgress.current / importProgress.total) * 100, 100) : 0}%`,
                     }}
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div>
                   <div className="text-2xl font-bold text-green-600">
                     {currentJob.productsCreated}
@@ -256,12 +286,30 @@ export default function ImportDashboard() {
                   <div className="text-sm text-gray-600">Updated</div>
                 </div>
                 <div>
+                  <div className="text-2xl font-bold text-gray-600">
+                    {(currentJob.metadata as any)?.skipped || 0}
+                  </div>
+                  <div className="text-sm text-gray-600">Skipped</div>
+                </div>
+                <div>
                   <div className="text-2xl font-bold text-red-600">
                     {currentJob.errors?.length || 0}
                   </div>
                   <div className="text-sm text-gray-600">Errors</div>
                 </div>
               </div>
+              {currentJob.errors && currentJob.errors.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Recent Errors:</h3>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {currentJob.errors.slice(-5).map((error: any, idx: number) => (
+                      <div key={idx} className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                        {error.message || error}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
