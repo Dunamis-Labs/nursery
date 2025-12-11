@@ -8,10 +8,18 @@ import type { PlantmarkProduct, PlantmarkApiConfig, PlantmarkApiResponse } from 
  * network requests from plantmark.com.au.
  * 
  * FALLBACK: If API is not available, use PlantmarkScraper instead.
+ * 
+ * To discover endpoints, run: npm run discover:plantmark
  */
 export class PlantmarkApiClient {
   private config: Required<PlantmarkApiConfig>;
   private lastRequestTime: number = 0;
+  private discoveredEndpoints: {
+    productList?: string;
+    productDetail?: string;
+    categories?: string;
+    search?: string;
+  } = {};
 
   constructor(config: PlantmarkApiConfig = {}) {
     this.config = {
@@ -21,11 +29,29 @@ export class PlantmarkApiClient {
       proxyUrl: config.proxyUrl || '',
       rateLimitMs: config.rateLimitMs || 2000, // Default: 1 request per 2 seconds
     };
+
+    // Try to load discovered endpoints from discovery script
+    this.loadDiscoveredEndpoints();
+  }
+
+  /**
+   * Load discovered endpoints from discovery script output
+   */
+  private loadDiscoveredEndpoints(): void {
+    try {
+      // In a real implementation, you'd load from the JSON file
+      // For now, we'll discover endpoints dynamically
+      // This will be populated after running the discovery script
+    } catch (error) {
+      // Endpoints file not found, will need to discover
+    }
   }
 
   /**
    * Discover API endpoints by inspecting network requests
    * This should be called first to identify available endpoints
+   * 
+   * Run: npm run discover:plantmark
    */
   async discoverEndpoints(): Promise<{
     productList?: string;
@@ -33,16 +59,23 @@ export class PlantmarkApiClient {
     categories?: string;
     search?: string;
   }> {
-    // TODO: Implement endpoint discovery
-    // This would involve:
-    // 1. Loading plantmark.com.au in a headless browser
-    // 2. Monitoring network requests
-    // 3. Identifying API endpoints (XHR/Fetch requests returning JSON)
-    // 4. Extracting endpoint patterns
+    // TODO: Implement endpoint discovery or load from discovery script output
+    // The discovery script (scripts/discover-plantmark-api.ts) should be run first
+    // to identify endpoints, then they can be loaded here
     
-    return {
-      // Placeholder - will be populated after discovery
-    };
+    return this.discoveredEndpoints;
+  }
+
+  /**
+   * Set discovered endpoints (called after running discovery script)
+   */
+  setDiscoveredEndpoints(endpoints: {
+    productList?: string;
+    productDetail?: string;
+    categories?: string;
+    search?: string;
+  }): void {
+    this.discoveredEndpoints = endpoints;
   }
 
   /**
@@ -59,16 +92,21 @@ export class PlantmarkApiClient {
   ): Promise<PlantmarkApiResponse> {
     await this.rateLimit();
 
-    // TODO: Implement actual API call once endpoints are discovered
-    // Example structure:
-    // const url = `${this.config.baseUrl}/api/products?page=${page}&pageSize=${pageSize}${category ? `&category=${category}` : ''}`;
-    // const response = await this.fetchWithProxy(url);
-    // return this.parseApiResponse(response);
+    if (!this.discoveredEndpoints.productList) {
+      throw new Error(
+        'Product list endpoint not discovered. ' +
+        'Run "npm run discover:plantmark" first or use PlantmarkScraper as fallback.'
+      );
+    }
 
-    throw new Error(
-      'Plantmark API endpoints not yet discovered. ' +
-      'Call discoverEndpoints() first or use PlantmarkScraper as fallback.'
-    );
+    const url = this.buildUrl(this.discoveredEndpoints.productList, {
+      page: page.toString(),
+      pageSize: pageSize.toString(),
+      ...(category && { category }),
+    });
+
+    const response = await this.fetchWithProxy(url);
+    return this.parseApiResponse(response);
   }
 
   /**
@@ -77,8 +115,23 @@ export class PlantmarkApiClient {
   async getProduct(productId: string): Promise<PlantmarkProduct | null> {
     await this.rateLimit();
 
-    // TODO: Implement once endpoint is discovered
-    throw new Error('Product detail endpoint not yet discovered.');
+    if (!this.discoveredEndpoints.productDetail) {
+      throw new Error(
+        'Product detail endpoint not discovered. ' +
+        'Run "npm run discover:plantmark" first or use PlantmarkScraper as fallback.'
+      );
+    }
+
+    const url = this.buildUrl(this.discoveredEndpoints.productDetail.replace('{id}', productId));
+    const response = await this.fetchWithProxy(url);
+    const data = await this.parseApiResponse(response);
+    
+    // Extract product from response (structure depends on API)
+    if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+      return data.products[0] as PlantmarkProduct;
+    }
+    
+    return null;
   }
 
   /**
@@ -87,8 +140,20 @@ export class PlantmarkApiClient {
   async searchProducts(query: string, page: number = 1): Promise<PlantmarkApiResponse> {
     await this.rateLimit();
 
-    // TODO: Implement once endpoint is discovered
-    throw new Error('Search endpoint not yet discovered.');
+    if (!this.discoveredEndpoints.search) {
+      throw new Error(
+        'Search endpoint not discovered. ' +
+        'Run "npm run discover:plantmark" first or use PlantmarkScraper as fallback.'
+      );
+    }
+
+    const url = this.buildUrl(this.discoveredEndpoints.search, {
+      q: query,
+      page: page.toString(),
+    });
+
+    const response = await this.fetchWithProxy(url);
+    return this.parseApiResponse(response);
   }
 
   /**
@@ -97,8 +162,38 @@ export class PlantmarkApiClient {
   async getCategories(): Promise<Array<{ id: string; name: string; parentId?: string }>> {
     await this.rateLimit();
 
-    // TODO: Implement once endpoint is discovered
-    throw new Error('Categories endpoint not yet discovered.');
+    if (!this.discoveredEndpoints.categories) {
+      throw new Error(
+        'Categories endpoint not discovered. ' +
+        'Run "npm run discover:plantmark" first or use PlantmarkScraper as fallback.'
+      );
+    }
+
+    const url = this.buildUrl(this.discoveredEndpoints.categories);
+    const response = await this.fetchWithProxy(url);
+    const data = await this.parseApiResponse(response);
+    
+    // Extract categories from response (structure depends on API)
+    if (Array.isArray(data)) {
+      return data as Array<{ id: string; name: string; parentId?: string }>;
+    }
+    
+    return [];
+  }
+
+  /**
+   * Build URL with query parameters
+   */
+  private buildUrl(endpoint: string, params?: Record<string, string>): string {
+    const url = new URL(endpoint, this.config.baseUrl);
+    
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        url.searchParams.append(key, value);
+      });
+    }
+    
+    return url.toString();
   }
 
   /**
@@ -124,6 +219,7 @@ export class PlantmarkApiClient {
       ...options,
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; NurseryBot/1.0)',
+        'Accept': 'application/json',
         ...options.headers,
       },
     };
@@ -141,6 +237,7 @@ export class PlantmarkApiClient {
       // Proxy implementation would go here
       // For now, we'll use direct fetch
       // In production, you might use a library like 'https-proxy-agent'
+      console.warn('Proxy support not yet implemented, using direct connection');
     }
 
     return fetch(url, fetchOptions);
@@ -150,7 +247,16 @@ export class PlantmarkApiClient {
    * Parse API response into standardized format
    */
   private async parseApiResponse(response: Response): Promise<PlantmarkApiResponse> {
-    return (await response.json()) as PlantmarkApiResponse;
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const data = (await response.json()) as PlantmarkApiResponse;
+    
+    // Normalize response structure
+    // The actual structure depends on Plantmark's API format
+    // This is a placeholder that may need adjustment
+    
+    return data;
   }
 }
-
