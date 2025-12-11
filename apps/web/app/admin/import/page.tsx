@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { admin } from '@nursery/api-client';
 
 // Simple fetch wrapper for admin API
 const adminApiClient = {

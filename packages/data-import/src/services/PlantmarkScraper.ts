@@ -118,7 +118,7 @@ export class PlantmarkScraper {
       }
 
       // Extract product data based on actual Plantmark structure
-      const products = await pageInstance.evaluate(() => {
+      let products = await pageInstance.evaluate(() => {
         // Plantmark uses: <div class="_ProductBoxWithLocation product-item product-attributes" data-productid="6697">
         const productElements = document.querySelectorAll('div[data-productid], .product-item[data-productid], ._ProductBoxWithLocation');
         const scrapedProducts: PlantmarkProduct[] = [];
