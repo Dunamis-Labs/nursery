@@ -19,12 +19,9 @@
     "@nursery/db": "*",
     "@nursery/api-client": "*",
     "@nursery/fulfillment": "*",
+    "@nursery/data-import": "*",
     "@prisma/client": "^5.9.1",
     "zod": "^3.22.4",
-    "@nursery/shared": "*",
-    "@nursery/db": "*",
-    "@nursery/api-client": "*",
-    "@nursery/fulfillment": "*",
     "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
     "lucide-react": "^0.344.0",
@@ -44,4 +41,3 @@
     "postcss": "^8.4.33"
   }
 }
-

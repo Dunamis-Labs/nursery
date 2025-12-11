@@ -7,6 +7,7 @@
     "apps/*",
     "packages/*"
   ],
+  "description": "Online Nursery Ecommerce Website - SEO-focused ecommerce platform with agent-driven content management",
   "scripts": {
     "dev": "npm run dev --workspace=apps/web",
     "build": "npm run build --workspace=apps/web",
