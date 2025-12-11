@@ -21,6 +21,7 @@
     "db:seed": "tsx scripts/seed.ts",
     "discover:plantmark": "tsx scripts/discover-plantmark-api.ts",
     "inspect:plantmark": "tsx scripts/inspect-plantmark-page.ts",
+    "test:scraper": "tsx scripts/test-plantmark-scraper.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\""
   },

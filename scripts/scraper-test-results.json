@@ -1,0 +1,241 @@
+{
+  "timestamp": "2025-12-11T18:55:49.597Z",
+  "totalProducts": 24,
+  "hasMore": false,
+  "sampleProducts": [
+    {
+      "id": "6697",
+      "name": "Abelia floribunda",
+      "sourceId": "6697",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-floribunda",
+      "description": "Abelia floribunda\n                            \n\n\n\n                        \n                            Abeflo\n\n                            Mexican Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/default-image_400.png"
+    },
+    {
+      "id": "2218",
+      "name": "Abelia grandiflora Aurea",
+      "sourceId": "2218",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-aurea",
+      "description": "Abelia grandiflora Aurea\n                            \n\n\n\n                        \n                            AbegraAu\n\n                            Golden Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/default-image_400.png"
+    },
+    {
+      "id": "1838",
+      "name": "Abelia grandiflora Francis Mason",
+      "sourceId": "1838",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-francis-mason",
+      "description": "Abelia grandiflora Francis Mason\n                            \n\n\n\n                        \n                            AbegraFM\n\n                            Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/0263444_abelia-grandiflora-francis-mason_400.jpg"
+    },
+    {
+      "id": "693",
+      "name": "Abelia grandiflora Kaleidoscope PBR",
+      "sourceId": "693",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-kaleidoscope",
+      "description": "Abelia grandiflora Kaleidoscope PBR\n                            \n\n\n\n                        \n                            AbegraKal\n\n                            Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/0283758_abelia-grandiflora-kaleidoscope-pbr_400.jpeg"
+    },
+    {
+      "id": "946",
+      "name": "Abelia grandiflora Keats Golden",
+      "sourceId": "946",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-keats-golden",
+      "description": "Abelia grandiflora Keats Golden\n                            \n\n\n\n                        \n                            AbegraKG\n\n                            Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/0270111_abelia-grandiflora-keatsgloden-foliage_400.jpg"
+    }
+  ],
+  "allProducts": [
+    {
+      "id": "6697",
+      "name": "Abelia floribunda",
+      "sourceId": "6697",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-floribunda",
+      "description": "Abelia floribunda\n                            \n\n\n\n                        \n                            Abeflo\n\n                            Mexican Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/default-image_400.png"
+    },
+    {
+      "id": "2218",
+      "name": "Abelia grandiflora Aurea",
+      "sourceId": "2218",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-aurea",
+      "description": "Abelia grandiflora Aurea\n                            \n\n\n\n                        \n                            AbegraAu\n\n                            Golden Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/default-image_400.png"
+    },
+    {
+      "id": "1838",
+      "name": "Abelia grandiflora Francis Mason",
+      "sourceId": "1838",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-francis-mason",
+      "description": "Abelia grandiflora Francis Mason\n                            \n\n\n\n                        \n                            AbegraFM\n\n                            Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/0263444_abelia-grandiflora-francis-mason_400.jpg"
+    },
+    {
+      "id": "693",
+      "name": "Abelia grandiflora Kaleidoscope PBR",
+      "sourceId": "693",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-kaleidoscope",
+      "description": "Abelia grandiflora Kaleidoscope PBR\n                            \n\n\n\n                        \n                            AbegraKal\n\n                            Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/0283758_abelia-grandiflora-kaleidoscope-pbr_400.jpeg"
+    },
+    {
+      "id": "946",
+      "name": "Abelia grandiflora Keats Golden",
+      "sourceId": "946",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-keats-golden",
+      "description": "Abelia grandiflora Keats Golden\n                            \n\n\n\n                        \n                            AbegraKG\n\n                            Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/0270111_abelia-grandiflora-keatsgloden-foliage_400.jpg"
+    },
+    {
+      "id": "261",
+      "name": "Abelia grandiflora Lime Splice",
+      "sourceId": "261",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-lime-splice",
+      "description": "Abelia grandiflora Lime Splice\n                            \n\n\n\n                        \n                            AbegraLS\n\n                            Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/0283131_abelia-grandiflora-lime-splice_400.jpeg"
+    },
+    {
+      "id": "6522",
+      "name": "Abelia grandiflora Mauve",
+      "sourceId": "6522",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-mauve",
+      "description": "Abelia grandiflora Mauve\n                            \n\n\n\n                        \n                            AbegraMa\n\n                            Mauve Flowering Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/default-image_400.png"
+    },
+    {
+      "id": "1391",
+      "name": "Abelia grandiflora Nana",
+      "sourceId": "1391",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-nana",
+      "description": "Abelia grandiflora Nana\n                            \n\n\n\n                        \n                            AbegraNa\n\n                            Dwarf Glossy Abelia,Dwarf Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/0262617_abelia-grandiflora-nana-foliage_400.jpg"
+    },
+    {
+      "id": "2943",
+      "name": "Abelia grandiflora Nana Variegata",
+      "sourceId": "2943",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-nana-variegata",
+      "description": "Abelia grandiflora Nana Variegata\n                            \n\n\n\n                        \n                            AbegraNaVa\n\n                            Variegated Dwarf Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/0265517_abelia-grandiflora-nanavariegata-foliage_400.jpg"
+    },
+    {
+      "id": "4001",
+      "name": "Abelia grandiflora Shorty",
+      "sourceId": "4001",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-shorty",
+      "description": "Abelia grandiflora Shorty\n                            \n\n\n\n                        \n                            AbegraSho\n\n                            Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/default-image_400.png"
+    },
+    {
+      "id": "9559",
+      "name": "Abelia grandiflora Snow Showers",
+      "sourceId": "9559",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-snow-showers",
+      "description": "Abelia grandiflora Snow Showers\n                            \n\n\n\n                        \n                            AbegraSS\n\n                            Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/default-image_400.png"
+    },
+    {
+      "id": "4002",
+      "name": "Abelia grandiflora Sparkles",
+      "sourceId": "4002",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-sparkles",
+      "description": "Abelia grandiflora Sparkles\n                            \n\n\n\n                        \n                            AbegraSpa\n\n                            Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/default-image_400.png"
+    },
+    {
+      "id": "4003",
+      "name": "Abelia grandiflora Sunrise",
+      "sourceId": "4003",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-sunrise",
+      "description": "Abelia grandiflora Sunrise\n                            \n\n\n\n                        \n                            AbegraSun\n\n                            Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/0267660_abelia-xgrandiflora-sunrise-foliage_400.jpg"
+    },
+    {
+      "id": "6699",
+      "name": "Abelia grandiflora Variegata",
+      "sourceId": "6699",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-grandiflora-variegata",
+      "description": "Abelia grandiflora Variegata\n                            \n\n\n\n                        \n                            AbegraVa\n\n                            Variegated Glossy Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/0270375_abelia-grandiflora-variegata-foliage_400.jpg"
+    },
+    {
+      "id": "4004",
+      "name": "Abelia schumannii",
+      "sourceId": "4004",
+      "sourceUrl": "https://www.plantmark.com.au/abelia-schumannii",
+      "description": "Abelia schumannii\n                            \n\n\n\n                        \n                            Abesch\n\n                            Schumann Abelia",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/0267661_abelia-schumannii-foliage_400.jpg"
+    },
+    {
+      "id": "4005",
+      "name": "Abies koreana Silberlocke",
+      "sourceId": "4005",
+      "sourceUrl": "https://www.plantmark.com.au/abies-koreana-silberlocke",
+      "description": "Abies koreana Silberlocke\n                            \n\n\n\n                        \n                            AbikorSil\n\n                            Korean Fir, Conifer",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/0267664_abies-koreana-silberlocke-foliage_400.jpg"
+    },
+    {
+      "id": "413",
+      "name": "Abies nordmanniana",
+      "sourceId": "413",
+      "sourceUrl": "https://www.plantmark.com.au/abies-nordmanniana",
+      "description": "Abies nordmanniana\n                            \n\n\n\n                        \n                            Abinor\n\n                            Caucasian Fir, Nordmann Fir,Caucasian Fir, Nordmann Fir",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/default-image_400.png"
+    },
+    {
+      "id": "9902",
+      "name": "Abode Cube and Saucer Buff Black",
+      "sourceId": "9902",
+      "sourceUrl": "https://www.plantmark.com.au/abode-cube-and-saucer-buff-black",
+      "description": "Abode Cube and Saucer Buff Black\n                            \n\n\n\n                        \n                            TWACaSBB",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/default-image_400.png"
+    },
+    {
+      "id": "1163",
+      "name": "Abode Cube and Saucer Shiny White",
+      "sourceId": "1163",
+      "sourceUrl": "https://www.plantmark.com.au/abode-cube-and-saucer-shiny-white",
+      "description": "Abode Cube and Saucer Shiny White\n                            \n\n\n\n                        \n                            TWACaSSW",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/default-image_400.png"
+    },
+    {
+      "id": "6523",
+      "name": "Abutilon fraseri",
+      "sourceId": "6523",
+      "sourceUrl": "https://www.plantmark.com.au/abutilon-fraseri",
+      "description": "Abutilon fraseri\n                            \n\n\n\n                        \n                            Abufra\n\n                            Dwarf Chinese Lantern",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/default-image_400.png"
+    },
+    {
+      "id": "6700",
+      "name": "Abutilon hybrida",
+      "sourceId": "6700",
+      "sourceUrl": "https://www.plantmark.com.au/abutilon-hybrida",
+      "description": "Abutilon hybrida\n                            \n\n\n\n                        \n                            Abuhyb\n\n                            Chinese Lantern",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/0270377_abutilon-hybridum-foliage_400.jpg"
+    },
+    {
+      "id": "6702",
+      "name": "Abutilon hybrida Bella",
+      "sourceId": "6702",
+      "sourceUrl": "https://www.plantmark.com.au/abutilon-hybrida-bella",
+      "description": "Abutilon hybrida Bella\n                            \n\n\n\n                        \n                            AbuhybBel\n\n                            Chinese Lantern",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/0270382_abutilon-hybrid-bellaseries-fruit-flower_400.jpg"
+    },
+    {
+      "id": "6701",
+      "name": "Abutilon hybrida Boule De Neige",
+      "sourceId": "6701",
+      "sourceUrl": "https://www.plantmark.com.au/abutilon-hybrida-boule-de-neige",
+      "description": "Abutilon hybrida Boule De Neige\n                            \n\n\n\n                        \n                            AbuhybBDN\n\n                            Chinese Lantern",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/0270381_abutilon-hybridum-bouledeneige-fruit-flower_400.jpg"
+    },
+    {
+      "id": "13997",
+      "name": "Abutilon hybrida Dwarf",
+      "sourceId": "13997",
+      "sourceUrl": "https://www.plantmark.com.au/abutilon-hybrida-dwarf",
+      "description": "Abutilon hybrida Dwarf\n                            \n\n\n\n                        \n                            AbuhybDw\n\n                            Dwarf Chinese Lantern",
+      "imageUrl": "https://www.plantmark.com.au/images/thumbs/default-image_400.png"
+    }
+  ]
+}

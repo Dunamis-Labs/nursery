@@ -31,15 +31,17 @@ export class PlantmarkScraper {
     try {
       const puppeteer = await import('puppeteer');
       this.browser = await puppeteer.launch({
-        headless: true,
+        headless: 'new',
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
       });
+      (this.browser as any).__isPuppeteer = true;
     } catch (error) {
       try {
         const { chromium } = await import('playwright');
         this.browser = await chromium.launch({
           headless: true,
         });
+        (this.browser as any).__isPlaywright = true;
       } catch (playwrightError) {
         throw new Error(
           'Neither Puppeteer nor Playwright is available. ' +
@@ -54,11 +56,7 @@ export class PlantmarkScraper {
    */
   async close(): Promise<void> {
     if (this.browser) {
-      if (this.browser.close) {
-        await this.browser.close();
-      } else if (this.browser.close) {
-        await this.browser.close();
-      }
+      await this.browser.close();
       this.browser = null;
     }
   }
@@ -80,19 +78,44 @@ export class PlantmarkScraper {
     const pageInstance = await this.browser.newPage();
 
     try {
-      // Set viewport and user agent
-      await pageInstance.setViewport({ width: 1920, height: 1080 });
-      await pageInstance.setUserAgent(
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
-      );
-
-      // Navigate to page
-      await pageInstance.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-
-      // Wait for product list to load
-      await pageInstance.waitForSelector('.product-item, [data-product], .product-card', {
-        timeout: 10000,
-      });
+      // Check if Puppeteer or Playwright
+      const isPuppeteer = (this.browser as any).__isPuppeteer;
+      
+      if (isPuppeteer) {
+        // Puppeteer API
+        await pageInstance.setViewport({ width: 1920, height: 1080 });
+        await pageInstance.setUserAgent(
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+        );
+        await pageInstance.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        // Wait a bit for content to load
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Try to wait for selector, but don't fail if it takes too long
+        try {
+          await pageInstance.waitForSelector('div[data-productid], .product-item[data-productid]', {
+            timeout: 10000,
+          });
+        } catch {
+          // Continue anyway - products might already be loaded
+        }
+      } else {
+        // Playwright API
+        await pageInstance.setViewportSize({ width: 1920, height: 1080 });
+        await pageInstance.setExtraHTTPHeaders({
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+        });
+        await pageInstance.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        // Wait a bit for content to load
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Try to wait for selector, but don't fail if it takes too long
+        try {
+          await pageInstance.waitForSelector('div[data-productid], .product-item[data-productid]', {
+            timeout: 10000,
+          });
+        } catch {
+          // Continue anyway - products might already be loaded
+        }
+      }
 
       // Extract product data based on actual Plantmark structure
       const products = await pageInstance.evaluate(() => {
@@ -104,10 +127,44 @@ export class PlantmarkScraper {
           const productId = element.getAttribute('data-productid');
           if (!productId) return;
 
-          // Find product name - usually in a link or heading
-          const nameEl = element.querySelector('a[href*="/"], h2, h3, .product-name, [class*="name"]');
+          // Find product link - this usually contains the name
           const linkEl = element.querySelector('a[href*="/"]');
-          const imageEl = element.querySelector('img');
+          if (!linkEl) return;
+          
+          const href = linkEl.getAttribute('href') || '';
+          const fullUrl = href.startsWith('http') ? href : `https://www.plantmark.com.au${href}`;
+          
+          // Extract name from link text or title attribute
+          let name = linkEl.textContent?.trim() || linkEl.getAttribute('title') || '';
+          
+          // Clean up common prefixes like "Show details for"
+          name = name.replace(/^Show details for\s*/i, '').trim();
+          
+          // If name is still empty, try to get it from the URL slug
+          if (!name && href) {
+            const slug = href.split('/').pop() || '';
+            // Convert slug to readable name (e.g., "abelia-floribunda" -> "Abelia Floribunda")
+            name = slug
+              .split('-')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+          }
+          
+          // Find image - look for actual image URLs, not placeholders
+          const imageEl = element.querySelector('img:not([src*="data:image"]):not([src*="placeholder"])');
+          let imageUrl = imageEl?.getAttribute('src') || imageEl?.getAttribute('data-src');
+          
+          // Make relative URLs absolute
+          if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
+            imageUrl = imageUrl.startsWith('/') 
+              ? `https://www.plantmark.com.au${imageUrl}`
+              : `https://www.plantmark.com.au/${imageUrl}`;
+          }
+          
+          // Skip placeholder/empty images
+          if (imageUrl?.includes('data:image') || imageUrl?.includes('placeholder') || !imageUrl) {
+            imageUrl = undefined;
+          }
           
           // Try to find price - might be in various formats
           const priceEl = element.querySelector('.price, [class*="price"], [data-price]');
@@ -116,33 +173,38 @@ export class PlantmarkScraper {
           const botanicalEl = element.querySelector('[class*="botanical"], [data-botanical]');
           const commonEl = element.querySelector('[class*="common"], [data-common]');
           
-          // Try to find description
-          const descEl = element.querySelector('.description, [class*="desc"], p');
+          // Try to find description - look for text content in the element
+          const descEl = element.querySelector('.description, [class*="desc"], p, .detail');
+          let description = descEl?.textContent?.trim();
+          
+          // If no description element found, get text from the whole product box
+          if (!description) {
+            const allText = element.textContent?.trim() || '';
+            // Remove the name from the text to get description
+            description = allText.replace(name, '').trim();
+          }
 
-          if (nameEl) {
-            const name = nameEl.textContent?.trim() || '';
-            const href = linkEl?.getAttribute('href') || '';
-            const fullUrl = href.startsWith('http') ? href : `https://www.plantmark.com.au${href}`;
-            
-            // Extract price if available
-            let price: number | undefined;
-            if (priceEl) {
-              const priceText = priceEl.textContent?.replace(/[^0-9.]/g, '') || '';
-              if (priceText) {
-                price = parseFloat(priceText);
-              }
+          // Extract price if available
+          let price: number | undefined;
+          if (priceEl) {
+            const priceText = priceEl.textContent?.replace(/[^0-9.]/g, '') || '';
+            if (priceText) {
+              price = parseFloat(priceText);
             }
+          }
 
+          // Only add if we have at least a name or description
+          if (name || description) {
             scrapedProducts.push({
               id: productId,
-              name,
+              name: name || description?.substring(0, 50) || 'Unknown',
               sourceId: productId,
               sourceUrl: fullUrl,
               botanicalName: botanicalEl?.textContent?.trim(),
               commonName: commonEl?.textContent?.trim(),
-              description: descEl?.textContent?.trim(),
+              description,
               price,
-              imageUrl: imageEl?.getAttribute('src') || imageEl?.getAttribute('data-src'),
+              imageUrl,
             });
           }
         });
@@ -176,7 +238,15 @@ export class PlantmarkScraper {
     const pageInstance = await this.browser.newPage();
 
     try {
-      await pageInstance.goto(fullUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+      const isPuppeteer = (this.browser as any).__isPuppeteer;
+      
+      if (isPuppeteer) {
+        await pageInstance.goto(fullUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } else {
+        await pageInstance.goto(fullUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
 
       // Extract product details
       const product = await pageInstance.evaluate(() => {
