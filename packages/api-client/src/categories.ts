@@ -1,5 +1,15 @@
 import { apiClient, adminApiClient } from './client';
-import type { Category } from '@nursery/db';
+// Category type will be available after Prisma client generation
+// For now, using Prisma's generated types
+type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  parentId?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export const categoryApi = {
   // Public endpoints

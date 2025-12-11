@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuth } from '@/lib/middleware/auth';
+import { validateApiKey } from '@/lib/middleware/auth';
 import { prisma } from '@nursery/db';
 import { z } from 'zod';
 
@@ -17,7 +17,7 @@ interface RouteParams {
   };
 }
 
-async function handler(
+async function handlerWithParams(
   request: NextRequest,
   { params }: RouteParams
 ) {
@@ -102,6 +102,31 @@ async function handler(
   return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
 }
 
-export const POST = withAuth(handler);
-export const GET = withAuth(handler);
+export async function POST(
+  request: NextRequest,
+  { params }: RouteParams
+) {
+  const apiKey = request.headers.get('X-API-Key');
+  if (!apiKey || !(await validateApiKey(apiKey))) {
+    return NextResponse.json(
+      { error: 'Unauthorized', message: 'Invalid or missing API key' },
+      { status: 401 }
+    );
+  }
+  return handlerWithParams(request, { params });
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: RouteParams
+) {
+  const apiKey = request.headers.get('X-API-Key');
+  if (!apiKey || !(await validateApiKey(apiKey))) {
+    return NextResponse.json(
+      { error: 'Unauthorized', message: 'Invalid or missing API key' },
+      { status: 401 }
+    );
+  }
+  return handlerWithParams(request, { params });
+}
 

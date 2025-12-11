@@ -36,11 +36,11 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Unknown error' }));
+      const error = await response.json().catch(() => ({ message: 'Unknown error' })) as { message?: string };
       throw new Error(error.message || `HTTP ${response.status}`);
     }
 
-    return response.json();
+    return response.json() as Promise<T>;
   }
 
   get<T>(endpoint: string, options?: RequestInit): Promise<T> {

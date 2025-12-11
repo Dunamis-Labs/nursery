@@ -1,5 +1,26 @@
 import { apiClient, adminApiClient } from './client';
-import type { Product } from '@nursery/db';
+// Product type will be available after Prisma client generation
+// For now, using Prisma's generated types
+type Product = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  productType: string;
+  price: number;
+  availability: string;
+  categoryId: string;
+  source: string;
+  sourceId?: string | null;
+  sourceUrl?: string | null;
+  botanicalName?: string | null;
+  commonName?: string | null;
+  imageUrl?: string | null;
+  images?: unknown;
+  metadata?: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export interface PaginationMeta {
   page: number;

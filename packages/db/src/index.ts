@@ -1,6 +1,9 @@
 export { PrismaClient } from '@prisma/client';
 export * from '@prisma/client';
 
+// Prisma types will be available after running: npm run db:generate
+// Types are generated from schema.prisma and exported from @prisma/client
+
 // Re-export Prisma client instance
 import { PrismaClient } from '@prisma/client';
 
