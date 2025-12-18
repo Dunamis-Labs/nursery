@@ -104,8 +104,6 @@ export default function ImportDashboard() {
   });
   const [isFixingCategories, setIsFixingCategories] = useState(false);
   const [categoryFixResult, setCategoryFixResult] = useState<any>(null);
-  const [isFixingCategories, setIsFixingCategories] = useState(false);
-  const [categoryFixResult, setCategoryFixResult] = useState<any>(null);
 
   // Fetch jobs on mount and periodically
   useEffect(() => {
