@@ -5,25 +5,61 @@ import { useState, useEffect } from 'react';
 // Simple fetch wrapper for admin API
 const adminApiClient = {
   get: async (path: string) => {
-    const response = await fetch(`/api${path}`, {
-      headers: {
-        'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || 'your-secure-api-key-here',
-      },
-    });
-    if (!response.ok) throw new Error(`API error: ${response.status}`);
-    return response.json();
+    try {
+      const response = await fetch(`/api${path}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        let error;
+        try {
+          error = JSON.parse(errorText);
+        } catch {
+          error = { error: errorText || `HTTP ${response.status}` };
+        }
+        console.error('API GET error:', {
+          path,
+          status: response.status,
+          statusText: response.statusText,
+          error,
+        });
+        throw new Error(error.message || error.error || `API error: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Fetch error:', error);
+      throw error;
+    }
   },
   post: async (path: string, data: unknown) => {
-    const response = await fetch(`/api${path}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || 'your-secure-api-key-here',
-      },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error(`API error: ${response.status}`);
-    return response.json();
+    try {
+      const response = await fetch(`/api${path}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        let error;
+        try {
+          error = JSON.parse(errorText);
+        } catch {
+          error = { error: errorText || `HTTP ${response.status}` };
+        }
+        console.error('API POST error:', {
+          path,
+          status: response.status,
+          statusText: response.statusText,
+          error,
+          requestData: data,
+        });
+        throw new Error(error.message || error.error || `API error: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Fetch error:', error);
+      throw error;
+    }
   },
 };
 
@@ -66,6 +102,10 @@ export default function ImportDashboard() {
     useApi: false,
     category: '',
   });
+  const [isFixingCategories, setIsFixingCategories] = useState(false);
+  const [categoryFixResult, setCategoryFixResult] = useState<any>(null);
+  const [isFixingCategories, setIsFixingCategories] = useState(false);
+  const [categoryFixResult, setCategoryFixResult] = useState<any>(null);
 
   // Fetch jobs on mount and periodically
   useEffect(() => {
@@ -79,7 +119,7 @@ export default function ImportDashboard() {
     if (isImporting && currentJob) {
       const interval = setInterval(async () => {
         try {
-          const job = await adminApiClient.get(`/admin/import-jobs/${currentJob.id}`);
+          const job = await adminApiClient.get(`/admin/import-jobs/${currentJob.id}/public`);
           setCurrentJob(job);
           setImportProgress({
             current: job.productsProcessed,
@@ -101,7 +141,7 @@ export default function ImportDashboard() {
 
   const fetchJobs = async () => {
     try {
-      const response = await adminApiClient.get('/admin/import-jobs');
+      const response = await adminApiClient.get('/admin/import-jobs/public');
       setJobs(response.jobs || []);
       
       // Set current job if there's a running one
@@ -125,23 +165,57 @@ export default function ImportDashboard() {
     }
   };
 
+  const handleFixCategories = async () => {
+    setIsFixingCategories(true);
+    setCategoryFixResult(null);
+    try {
+      const result = await adminApiClient.post('/admin/fix-categories', {});
+      setCategoryFixResult(result);
+      alert(`Categories fixed successfully!\n\nUpdated: ${result.summary.updated}\nCreated: ${result.summary.created}\nSkipped: ${result.summary.skipped}`);
+      // Refresh the page to see updated categories
+      window.location.reload();
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Unknown error';
+      console.error('Failed to fix categories:', error);
+      alert(`Failed to fix categories: ${errorMessage}\n\nCheck the browser console for more details.`);
+    } finally {
+      setIsFixingCategories(false);
+    }
+  };
+
   const startImport = async () => {
     try {
       setIsImporting(true);
-      const response = await adminApiClient.post('/admin/import-jobs', {
+      console.log('Starting import with options:', importOptions);
+      
+      const response = await adminApiClient.post('/admin/import-jobs/start', {
         jobType: 'FULL',
         useApi: importOptions.useApi,
         maxProducts: importOptions.maxProducts || undefined,
         category: importOptions.category || undefined,
       });
       
+      console.log('Import started successfully:', response);
       setCurrentJob(response);
       setImportProgress({ current: 0, total: importOptions.maxProducts });
       fetchRecentProducts();
     } catch (error) {
       console.error('Error starting import:', error);
       setIsImporting(false);
-      alert('Failed to start import. Check console for details.');
+      
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        console.error('Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+        });
+      } else if (typeof error === 'object' && error !== null) {
+        errorMessage = JSON.stringify(error);
+      }
+      
+      alert(`Failed to start import: ${errorMessage}\n\nCheck the browser console for more details.`);
     }
   };
 
@@ -149,14 +223,15 @@ export default function ImportDashboard() {
     if (!currentJob) return;
     
     try {
-      await adminApiClient.post(`/admin/import-jobs/${currentJob.id}/stop`, {});
+      await adminApiClient.post(`/admin/import-jobs/${currentJob.id}/stop/public`, {});
       setIsImporting(false);
       setCurrentJob(null);
       fetchJobs();
       alert('Import stopped. The current product being processed will complete.');
     } catch (error) {
       console.error('Error stopping import:', error);
-      alert('Failed to stop import. Check console for details.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Failed to stop import: ${errorMessage}`);
     }
   };
 
@@ -231,10 +306,17 @@ export default function ImportDashboard() {
           <div className="flex gap-4">
             <button
               onClick={startImport}
-              disabled={isImporting}
+              disabled={isImporting || isFixingCategories}
               className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {isImporting ? 'Importing...' : 'Start Import'}
+            </button>
+            <button
+              onClick={handleFixCategories}
+              disabled={isFixingCategories || isImporting}
+              className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {isFixingCategories ? 'Fixing Categories...' : 'Fix Categories'}
             </button>
             {isImporting && (
               <button

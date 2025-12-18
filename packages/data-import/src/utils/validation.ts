@@ -19,6 +19,9 @@ export const plantmarkProductSchema = z.object({
   images: z.array(z.string().url()).optional(),
   sourceUrl: z.string().url(),
   sourceId: z.string().optional(),
+  specifications: z.record(z.unknown()).optional(),
+  careInstructions: z.string().optional(),
+  plantingInstructions: z.string().optional(),
   metadata: z.record(z.unknown()).optional(),
 });
 

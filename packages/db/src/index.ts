@@ -11,9 +11,28 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+// Ensure DATABASE_URL is set and valid
+const databaseUrl = process.env.DATABASE_URL || process.env.DATABASE_URL_NON_POOLING || process.env.POSTGRES_URL_NON_POOLING;
+
+if (!databaseUrl) {
+  throw new Error(
+    'DATABASE_URL is not set. Please set DATABASE_URL, DATABASE_URL_NON_POOLING, or POSTGRES_URL_NON_POOLING in your environment variables.'
+  );
+}
+
+// Warn if using pooler connection (scripts can't use it, but Next.js can)
+if (databaseUrl.includes('pooler.supabase.com') && process.env.NODE_ENV === 'development') {
+  console.warn('⚠️  Using pooler connection. For scripts, use DATABASE_URL_NON_POOLING with direct connection.');
+}
+
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
+    datasources: {
+      db: {
+        url: databaseUrl,
+      },
+    },
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 

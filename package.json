@@ -23,6 +23,8 @@
     "inspect:plantmark": "tsx scripts/inspect-plantmark-page.ts",
     "test:scraper": "tsx scripts/test-plantmark-scraper.ts",
     "import:full": "dotenv -e .env -- tsx scripts/full-plantmark-import.ts",
+    "download:images": "tsx scripts/download-product-images.ts",
+    "fix:categories": "tsx scripts/fix-categories.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\""
   },

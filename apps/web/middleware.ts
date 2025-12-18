@@ -2,8 +2,15 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  // Protect admin API routes
-  if (request.nextUrl.pathname.startsWith('/api/admin')) {
+  // Protect admin API routes, but allow public routes for dashboard
+  const pathname = request.nextUrl.pathname;
+  
+  // Skip auth for public dashboard routes
+  if (pathname.includes('/public') || pathname.includes('/start')) {
+    return NextResponse.next();
+  }
+  
+  if (pathname.startsWith('/api/admin')) {
     const apiKey = request.headers.get('X-API-Key');
     
     if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
