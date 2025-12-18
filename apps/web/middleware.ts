@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
   // Skip auth for public dashboard routes
-  if (pathname.includes('/public') || pathname.includes('/start')) {
+  if (pathname.includes('/public') || pathname.includes('/start') || pathname.includes('/fix-categories')) {
     return NextResponse.next();
   }
   

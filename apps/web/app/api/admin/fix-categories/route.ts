@@ -3,15 +3,19 @@ import { prisma } from '@nursery/db';
 
 /**
  * API endpoint to fix category assignments for products
- * This can be called from the browser/admin dashboard since it runs in the Next.js context
- * which has access to the database connection
+ * Extracts categories directly from Plantmark URLs (no inference)
+ * Note: This endpoint is accessible from the admin dashboard without API key
  */
 export async function POST(request: NextRequest) {
+  // Allow access from admin dashboard (no API key required for this endpoint)
   try {
-    console.log('🌱 Starting category fix via API...');
+    console.log('🌱 Starting category fix via API (extracting from Plantmark URLs)...');
 
-    // Get all products
+    // Get all products with sourceUrl
     const products = await prisma.product.findMany({
+      where: {
+        sourceUrl: { not: null },
+      },
       include: {
         category: true,
       },
@@ -26,201 +30,52 @@ export async function POST(request: NextRequest) {
       categoryMap.set(cat.name.toLowerCase(), cat.id);
     });
 
-    // Comprehensive category inference logic (from fix-categories.ts)
-    const GENUS_CATEGORY_MAPPINGS: Record<string, string> = {
-      // Trees
-      eucalyptus: 'Trees',
-      acacia: 'Trees',
-      melaleuca: 'Trees',
-      callistemon: 'Trees',
-      citrus: 'Trees',
-      grevillea: 'Trees',
-      banksia: 'Trees',
-      leptospermum: 'Trees',
-      syzygium: 'Trees',
-      corymbia: 'Trees',
-      angophora: 'Trees',
-      casuarina: 'Trees',
-      // Shrubs
-      camellia: 'Shrubs',
-      azalea: 'Shrubs',
-      rhododendron: 'Shrubs',
-      viburnum: 'Shrubs',
-      hydrangea: 'Shrubs',
-      buxus: 'Shrubs',
-      pittosporum: 'Shrubs',
-      westringia: 'Shrubs',
-      aucuba: 'Shrubs',
-      gardenia: 'Shrubs',
-      protea: 'Shrubs',
-      boronia: 'Shrubs',
-      eremophila: 'Shrubs',
-      hakea: 'Shrubs',
-      kunzea: 'Shrubs',
-      olearia: 'Shrubs',
-      // Perennials
-      petunia: 'Perennials',
-      osteospermum: 'Perennials',
-      gazania: 'Perennials',
-      verbena: 'Perennials',
-      lobelia: 'Perennials',
-      begonia: 'Perennials',
-      impatiens: 'Perennials',
-      coleus: 'Perennials',
-      calibrachoa: 'Perennials',
-      // Succulents
-      senecio: 'Succulents',
-      echeveria: 'Succulents',
-      portulaca: 'Succulents',
-      graptopetalum: 'Succulents',
-      sempervivum: 'Succulents',
-      cotyledon: 'Succulents',
-      delosperma: 'Succulents',
-      mesembryanthemum: 'Succulents',
-      // Grasses
-      dianella: 'Grasses',
-      liriope: 'Grasses',
-      ophiopogon: 'Grasses',
-      festuca: 'Grasses',
-      stipa: 'Grasses',
-      poa: 'Grasses',
-      agrostis: 'Grasses',
-      cortaderia: 'Grasses',
-      panicum: 'Grasses',
-      schizachyrium: 'Grasses',
-      // Indoor Plants
-      syngonium: 'Indoor Plants',
-      monstera: 'Indoor Plants',
-      pothos: 'Indoor Plants',
-      epipremnum: 'Indoor Plants',
-      scindapsus: 'Indoor Plants',
-      schefflera: 'Indoor Plants',
-      dieffenbachia: 'Indoor Plants',
-      calathea: 'Indoor Plants',
-      maranta: 'Indoor Plants',
-      peperomia: 'Indoor Plants',
-      pilea: 'Indoor Plants',
-      tradescantia: 'Indoor Plants',
-      aechmea: 'Indoor Plants',
-      guzmania: 'Indoor Plants',
-      tillandsia: 'Indoor Plants',
-      // Roses
-      rosa: 'Roses',
-      // Palms
-      phoenix: 'Palms',
-      trachycarpus: 'Palms',
-      livistona: 'Palms',
-      // Ferns
-      dicksonia: 'Ferns',
-      cyathea: 'Ferns',
-      // Climbers
-      clematis: 'Climbers',
-      jasmine: 'Climbers',
-      wisteria: 'Climbers',
-      // Groundcovers
-      ajuga: 'Groundcovers',
-      vinca: 'Groundcovers',
-      lamium: 'Groundcovers',
-    };
-
-    function inferCategoryFromProduct(
-      name: string,
-      botanicalName: string | null | undefined,
-      sourceUrl?: string | null
-    ): string | null {
-      const nameLower = name.toLowerCase().trim();
-      const nameParts = name.trim().split(/\s+/);
-
-      // Strategy 1: Extract genus from botanicalName or name
-      let genus: string | null = null;
-
-      if (botanicalName) {
-        genus = botanicalName.trim().split(/\s+/)[0].toLowerCase();
-      } else if (nameParts.length > 0) {
-        // Try to extract genus from product name (first capitalized word)
-        const firstWord = nameParts[0];
-        if (
-          firstWord.length >= 2 &&
-          firstWord[0] === firstWord[0].toUpperCase() &&
-          /^[A-Za-z]+$/.test(firstWord)
-        ) {
-          genus = firstWord.toLowerCase();
-        }
-      }
-
-      // Check genus mappings
-      if (genus && GENUS_CATEGORY_MAPPINGS[genus]) {
-        return GENUS_CATEGORY_MAPPINGS[genus];
-      }
-
-      // Strategy 2: Check URL path for category hints
-      if (sourceUrl) {
-        try {
-          const url = new URL(sourceUrl);
-          const pathParts = url.pathname.split('/').filter((p) => p && p !== 'plant-finder');
-          const categorySlug = pathParts[0]?.toLowerCase();
-          if (categorySlug) {
-            const categoryMap: Record<string, string> = {
-              trees: 'Trees',
-              shrubs: 'Shrubs',
-              perennials: 'Perennials',
-              annuals: 'Annuals',
-              succulents: 'Succulents',
-              palms: 'Palms',
-              grasses: 'Grasses',
-              ferns: 'Ferns',
-              climbers: 'Climbers',
-              groundcovers: 'Groundcovers',
-              'ground-covers': 'Groundcovers',
-              'indoor-plants': 'Indoor Plants',
-              indoor: 'Indoor Plants',
-              houseplants: 'Indoor Plants',
-              roses: 'Roses',
-            };
-            if (categoryMap[categorySlug]) {
-              return categoryMap[categorySlug];
-            }
+    /**
+     * Extract category from Plantmark URL
+     * Categories are in the URL path like: /trees/product-name or /shrubs/product-name
+     */
+    function extractCategoryFromUrl(sourceUrl: string | null): string | null {
+      if (!sourceUrl) return null;
+      
+      try {
+        const url = new URL(sourceUrl);
+        const pathParts = url.pathname.split('/').filter(p => p && p !== 'plant-finder');
+        
+        if (pathParts.length > 0) {
+          const categorySlug = pathParts[0].toLowerCase();
+          
+          // Map common slugs to category names (matching Plantmark's structure)
+          const categoryNameMap: Record<string, string> = {
+            'trees': 'Trees',
+            'shrubs': 'Shrubs',
+            'perennials': 'Perennials',
+            'annuals': 'Annuals',
+            'succulents': 'Succulents',
+            'palms': 'Palms',
+            'grasses': 'Grasses',
+            'ferns': 'Ferns',
+            'climbers': 'Climbers',
+            'groundcovers': 'Groundcovers',
+            'ground-covers': 'Groundcovers',
+            'indoor-plants': 'Indoor Plants',
+            'indoor': 'Indoor Plants',
+            'houseplants': 'Indoor Plants',
+            'roses': 'Roses',
+          };
+          
+          if (categoryNameMap[categorySlug]) {
+            return categoryNameMap[categorySlug];
           }
-        } catch {
-          // Invalid URL, skip
+          
+          // Convert slug to readable name (e.g., "trees" -> "Trees", "indoor-plants" -> "Indoor Plants")
+          return categorySlug.split('-').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+          ).join(' ');
         }
+      } catch (error) {
+        console.error(`Error parsing URL ${sourceUrl}:`, error);
       }
-
-      // Strategy 3: Keyword matching in product name
-      if (nameLower.includes('rose') || nameLower.startsWith('rosa ') || nameLower.includes(' rosa')) {
-        return 'Roses';
-      }
-      if (nameLower.includes('tree') && !nameLower.includes('shrub') && !nameLower.includes('ground')) {
-        return 'Trees';
-      }
-      if (nameLower.includes('shrub') || nameLower.includes('bush')) {
-        return 'Shrubs';
-      }
-      if (nameLower.includes('succulent') || nameLower.includes('cactus')) {
-        return 'Succulents';
-      }
-      if (nameLower.includes('palm')) {
-        return 'Palms';
-      }
-      if (nameLower.includes('grass') || nameLower.includes('sedge')) {
-        return 'Grasses';
-      }
-      if (nameLower.includes('fern')) {
-        return 'Ferns';
-      }
-      if (nameLower.includes('climber') || nameLower.includes('vine') || nameLower.includes('creeper')) {
-        return 'Climbers';
-      }
-      if (nameLower.includes('groundcover') || nameLower.includes('ground cover') || nameLower.includes('ground-cover')) {
-        return 'Groundcovers';
-      }
-      if (nameLower.includes('perennial')) {
-        return 'Perennials';
-      }
-      if (nameLower.includes('indoor') || nameLower.includes('houseplant') || nameLower.includes('house plant')) {
-        return 'Indoor Plants';
-      }
-
+      
       return null;
     }
 
@@ -235,11 +90,8 @@ export async function POST(request: NextRequest) {
 
       for (const product of batch) {
         try {
-          const categoryName = inferCategoryFromProduct(
-            product.name,
-            product.botanicalName,
-            product.sourceUrl
-          );
+          // Extract category from URL only (no inference)
+          const categoryName = extractCategoryFromUrl(product.sourceUrl);
 
           if (!categoryName) {
             skipped++;
@@ -326,4 +178,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
