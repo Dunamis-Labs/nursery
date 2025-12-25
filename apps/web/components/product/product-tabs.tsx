@@ -46,25 +46,22 @@ export function ProductTabs({ description, specifications, careInstructions }: P
               description.split(/\n\n+/).map((paragraph, index) => {
                 const trimmed = paragraph.trim();
                 
-                // Render markdown bold (**text**) as <strong>
-                const renderMarkdown = (text: string) => {
-                  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-                  return parts.map((part, i) => {
-                    if (part.startsWith('**') && part.endsWith('**')) {
-                      return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
-                    }
-                    return <span key={i}>{part}</span>;
-                  });
-                };
-                
                 return (
                   <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
-                    {trimmed.split('\n').map((line, lineIndex, array) => (
-                      <React.Fragment key={lineIndex}>
-                        {renderMarkdown(line.trim())}
-                        {lineIndex < array.length - 1 && <br />}
-                      </React.Fragment>
-                    ))}
+                    {trimmed.split('\n').map((line, lineIndex, array) => {
+                      const parts = line.trim().split(/(\*\*[^*]+\*\*)/g);
+                      return (
+                        <React.Fragment key={lineIndex}>
+                          {parts.map((part, i) => {
+                            if (part.startsWith('**') && part.endsWith('**')) {
+                              return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                            }
+                            return <span key={i}>{part}</span>;
+                          })}
+                          {lineIndex < array.length - 1 && <br />}
+                        </React.Fragment>
+                      );
+                    })}
                   </p>
                 );
               })
@@ -127,24 +124,22 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                 }
                 
                 // Regular paragraph - render markdown bold
-                const renderMarkdown = (text: string) => {
-                  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-                  return parts.map((part, i) => {
-                    if (part.startsWith('**') && part.endsWith('**')) {
-                      return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
-                    }
-                    return <span key={i}>{part}</span>;
-                  });
-                };
-                
                 return (
                   <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
-                    {trimmed.split('\n').map((line, lineIndex, array) => (
-                      <React.Fragment key={lineIndex}>
-                        {renderMarkdown(line.trim())}
-                        {lineIndex < array.length - 1 && <br />}
-                      </React.Fragment>
-                    ))}
+                    {trimmed.split('\n').map((line, lineIndex, array) => {
+                      const parts = line.trim().split(/(\*\*[^*]+\*\*)/g);
+                      return (
+                        <React.Fragment key={lineIndex}>
+                          {parts.map((part, i) => {
+                            if (part.startsWith('**') && part.endsWith('**')) {
+                              return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                            }
+                            return <span key={i}>{part}</span>;
+                          })}
+                          {lineIndex < array.length - 1 && <br />}
+                        </React.Fragment>
+                      );
+                    })}
                   </p>
                 );
               })
