@@ -128,7 +128,8 @@ export function Navigation({ categories = [] }: NavigationProps) {
                         </span>
                       </div>
                       {navCategories.map((category) => {
-                        const Icon = category.icon
+                        const Icon = category.icon || Leaf
+                        if (!Icon) return null
                         return (
                           <Link
                             key={category.slug}
@@ -224,7 +225,8 @@ export function Navigation({ categories = [] }: NavigationProps) {
                   <div className="p-6">
                     <div className="grid grid-cols-3 gap-3">
                       {navCategories.map((category) => {
-                        const Icon = category.icon
+                        const Icon = category.icon || Leaf
+                        if (!Icon) return null
                         return (
                           <Link
                             key={category.slug}
