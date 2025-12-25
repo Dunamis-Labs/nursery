@@ -110,7 +110,7 @@ export function ProductGrid({ products, filters, sortBy, categoryName }: Product
         if (product.specification?.humidity) {
           // Normalize humidity values
           const humidity = product.specification.humidity.toLowerCase()
-          return filters.humidity.some(filter => {
+          return filters.humidity!.some(filter => {
             const filterLower = filter.toLowerCase()
             return humidity.includes(filterLower) || 
                    (filterLower === 'moderate' && humidity.includes('medium'))
@@ -125,7 +125,7 @@ export function ProductGrid({ products, filters, sortBy, categoryName }: Product
       filtered = filtered.filter((product) => {
         if (product.specification?.growthRate) {
           const growthRate = product.specification.growthRate.toLowerCase()
-          return filters.growthRate.some(filter => 
+          return filters.growthRate!.some(filter => 
             growthRate.includes(filter.toLowerCase())
           )
         }
@@ -138,7 +138,7 @@ export function ProductGrid({ products, filters, sortBy, categoryName }: Product
       filtered = filtered.filter((product) => {
         if (product.specification?.difficulty) {
           const difficulty = product.specification.difficulty.toLowerCase()
-          return filters.difficulty.some(filter => 
+          return filters.difficulty!.some(filter => 
             difficulty.includes(filter.toLowerCase())
           )
         }
@@ -151,7 +151,7 @@ export function ProductGrid({ products, filters, sortBy, categoryName }: Product
       filtered = filtered.filter((product) => {
         if (product.specification?.toxicity) {
           const toxicity = product.specification.toxicity.toLowerCase()
-          return filters.toxicity.some(filter => {
+          return filters.toxicity!.some(filter => {
             const filterLower = filter.toLowerCase()
             if (filterLower === 'non-toxic') {
               return toxicity.includes('non-toxic') || toxicity.includes('non toxic')

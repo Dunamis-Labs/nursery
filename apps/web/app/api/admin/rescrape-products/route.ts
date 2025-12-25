@@ -22,8 +22,8 @@ async function getPrimaryCategory(categoryId: string | null): Promise<{ id: stri
   if (!currentCategory) return null;
   
   // Traverse up the tree until we find a category with no parent
-  while (currentCategory.parentId) {
-    const parent = await prisma.category.findUnique({
+  while (currentCategory && currentCategory.parentId) {
+    const parent: { id: string; name: string; parentId: string | null } | null = await prisma.category.findUnique({
       where: { id: currentCategory.parentId },
       select: { id: true, name: true, parentId: true },
     });
@@ -32,6 +32,7 @@ async function getPrimaryCategory(categoryId: string | null): Promise<{ id: stri
     currentCategory = parent;
   }
   
+  if (!currentCategory) return null;
   return { id: currentCategory.id, name: currentCategory.name };
 }
 

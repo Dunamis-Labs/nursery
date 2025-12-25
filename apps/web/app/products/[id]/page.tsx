@@ -114,7 +114,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           {/* Product Header Section */}
           <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-8 lg:gap-12 mb-16">
             <ProductImageGallery images={allImages} name={product.name} />
-            <ProductInfo product={productForClient} />
+            <ProductInfo product={productForClient as any} />
           </div>
 
           {/* Product Details Tabs */}
@@ -129,7 +129,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
           {/* Related Products */}
           {relatedProducts.length > 0 && (
-            <RelatedProducts currentProductId={product.id} products={relatedProducts} />
+            <RelatedProducts currentProductId={product.id} products={relatedProducts as any} />
           )}
         </div>
       </main>

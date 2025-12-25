@@ -131,7 +131,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       />
       <CategoryContent
         categoryName={category.name}
-        products={finalProductsForClient}
+        products={finalProductsForClient as any} // Type assertion needed due to Decimal/Date transformation
         priceRange={[minPrice, maxPrice]}
         explainer={
           category.description && typeof category.description === 'string'

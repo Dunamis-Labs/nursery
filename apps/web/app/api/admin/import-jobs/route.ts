@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth';
-import { DataImportService } from '@nursery/data-import';
 import { prisma } from '@nursery/db';
 import { ScrapingJobType } from '@nursery/db';
 import { z } from 'zod';
@@ -18,6 +17,9 @@ async function handler(request: NextRequest) {
       const body = await request.json();
       const validatedData = createImportJobSchema.parse(body);
 
+      // Dynamic import to prevent build-time analysis of optional dependencies
+      const { DataImportService } = await import('@nursery/data-import');
+      
       // Initialize import service
       const importService = new DataImportService({
         baseUrl: process.env.PLANTMARK_BASE_URL || 'https://www.plantmark.com.au',

@@ -1,6 +1,5 @@
 import { prisma, Prisma } from '@nursery/db';
 import { PlantmarkApiClient } from './PlantmarkApiClient';
-import { PlantmarkScraper } from './PlantmarkScraper';
 import { ImageDownloadService } from './ImageDownloadService';
 import { validateProduct, normalizeProduct, generateSlug } from '../utils/validation';
 import type { PlantmarkProduct, ImportResult, ScrapingJobData, PlantmarkApiConfig } from '../types';
@@ -19,16 +18,41 @@ export interface ImportOptions {
  */
 export class DataImportService {
   private apiClient: PlantmarkApiClient;
-  private scraper: PlantmarkScraper;
+  private scraper: any = null; // Lazy-loaded PlantmarkScraper
+  private scraperConfig: PlantmarkApiConfig;
   private imageDownloader: ImageDownloadService;
   private currentJobId: string | null = null;
 
   constructor(config: PlantmarkApiConfig = {}) {
     this.apiClient = new PlantmarkApiClient(config);
-    this.scraper = new PlantmarkScraper(config);
+    this.scraperConfig = config; // Store config for lazy loading
     this.imageDownloader = new ImageDownloadService({
       baseUrl: '/products/',
     });
+  }
+
+  /**
+   * Lazy-load PlantmarkScraper only when needed
+   * This prevents Next.js from analyzing puppeteer/playwright during build
+   */
+  private async getScraper(): Promise<any> {
+    if (this.scraper) {
+      return this.scraper;
+    }
+
+    // Skip during build - these are runtime-only dependencies
+    if (process.env.NEXT_PHASE === 'phase-production-build' || 
+        (process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV !== 'production')) {
+      throw new Error(
+        'Browser automation is not available during build. ' +
+        'This code should only run at runtime in API routes.'
+      );
+    }
+
+    // Dynamic import to prevent build-time analysis
+    const { PlantmarkScraper } = await import('./PlantmarkScraper');
+    this.scraper = new PlantmarkScraper(this.scraperConfig);
+    return this.scraper;
   }
 
   /**
@@ -213,7 +237,14 @@ export class DataImportService {
       throw error;
     } finally {
       // Cleanup scraper browser if used
-      await this.scraper.close();
+      if (this.scraper) {
+        try {
+          await this.scraper.close();
+        } catch (error) {
+          // Ignore cleanup errors
+          console.warn('Error closing scraper:', error);
+        }
+      }
     }
   }
 
@@ -252,10 +283,11 @@ export class DataImportService {
     let hasMore = true;
     let consecutiveEmptyPages = 0;
 
-    await this.scraper.initialize();
+    const scraper = await this.getScraper();
+    await scraper.initialize();
 
     while (hasMore && consecutiveEmptyPages < 2) {
-      const result = await this.scraper.scrapeProducts(page, options.category);
+      const result = await scraper.scrapeProducts(page, options.category);
       
       if (result.products.length === 0) {
         consecutiveEmptyPages++;

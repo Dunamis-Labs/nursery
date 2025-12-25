@@ -11,6 +11,15 @@ export type {
   NestedJsonNullableFilter,
 } from '@prisma/client';
 
+// Export Prisma enums and types that are commonly used
+export {
+  ScrapingJobType,
+  ScrapingJobStatus,
+  ProductSource,
+  ProductType,
+  AvailabilityStatus,
+} from '@prisma/client';
+
 // Prisma types will be available after running: npm run db:generate
 // Types are generated from schema.prisma and exported from @prisma/client
 

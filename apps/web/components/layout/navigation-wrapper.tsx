@@ -28,7 +28,7 @@ export async function NavigationWrapper() {
   try {
     categories = await prisma.category.findMany({
       where: {
-        name: { in: MAIN_CATEGORIES },
+        name: { in: [...MAIN_CATEGORIES] }, // Convert readonly array to mutable
         parentId: null,
       },
       select: {

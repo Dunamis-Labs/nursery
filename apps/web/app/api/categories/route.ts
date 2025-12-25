@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     // Only return the 15 main categories - no subcategories
     const categories = await prisma.category.findMany({
       where: {
-        name: { in: MAIN_CATEGORIES },
+        name: { in: [...MAIN_CATEGORIES] }, // Convert readonly array to mutable
         parentId: null, // Only top-level categories
       },
       select: {

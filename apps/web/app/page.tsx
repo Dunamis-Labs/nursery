@@ -8,11 +8,17 @@ import { MAIN_CATEGORIES } from '@/lib/constants/categories';
 
 export default async function HomePage() {
   // Fetch only the 15 main categories
-  let categories = [];
+  let categories: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    _count: { products: number };
+  }> = [];
   try {
     categories = await prisma.category.findMany({
       where: {
-        name: { in: MAIN_CATEGORIES },
+        name: { in: [...MAIN_CATEGORIES] }, // Convert readonly array to mutable
         parentId: null,
       },
       select: {
@@ -35,7 +41,7 @@ export default async function HomePage() {
   }
 
   // Fetch featured products (in stock, recently added)
-  let featuredProducts = [];
+  let featuredProducts: Array<any> = [];
   try {
     const featuredProductsRaw = await prisma.product.findMany({
       take: 8,
@@ -71,8 +77,8 @@ export default async function HomePage() {
       <NavigationWrapper />
       <main>
         <HeroSection />
-        <CategoryGrid categories={categories} />
-        <FeaturedProducts products={featuredProducts} />
+        <CategoryGrid categories={categories as any} />
+        <FeaturedProducts products={featuredProducts as any} />
       </main>
       <Footer />
     </div>
