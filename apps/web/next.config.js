@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
-// Load environment variables from root .env file
-require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
+// Note: Next.js automatically loads .env files from the project root
+// Vercel provides environment variables automatically, no dotenv needed
 
 const nextConfig = {
   reactStrictMode: true,
