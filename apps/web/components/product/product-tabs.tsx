@@ -52,20 +52,60 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                 
                 return (
                   <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
-                    {trimmed.split('\n').flatMap((line, lineIndex, array) => {
-                      const parts = line.trim().split(/(\*\*[^*]+\*\*)/g);
-                      const elements = parts
-                        .filter(part => part.length > 0) // Filter out empty strings
-                        .map((part, i) => {
-                          if (part.startsWith('**') && part.endsWith('**')) {
-                            return <strong key={`${lineIndex}-${i}`} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                    {trimmed.split('\n').map((line, lineIndex, array) => {
+                      const lineText = line.trim();
+                      if (!lineText) return null;
+                      
+                      // Parse markdown bold manually
+                      const elements: React.ReactNode[] = [];
+                      let currentIndex = 0;
+                      let partIndex = 0;
+                      
+                      while (currentIndex < lineText.length) {
+                        const boldStart = lineText.indexOf('**', currentIndex);
+                        if (boldStart === -1) {
+                          // No more bold markers, add remaining text
+                          const remaining = lineText.slice(currentIndex);
+                          if (remaining) {
+                            elements.push(<span key={`${lineIndex}-${partIndex++}`}>{remaining}</span>);
                           }
-                          return <span key={`${lineIndex}-${i}`}>{part}</span>;
-                        });
-                      if (lineIndex < array.length - 1) {
-                        elements.push(<br key={`${lineIndex}-br`} />);
+                          break;
+                        }
+                        
+                        // Add text before bold
+                        if (boldStart > currentIndex) {
+                          const beforeBold = lineText.slice(currentIndex, boldStart);
+                          if (beforeBold) {
+                            elements.push(<span key={`${lineIndex}-${partIndex++}`}>{beforeBold}</span>);
+                          }
+                        }
+                        
+                        // Find end of bold
+                        const boldEnd = lineText.indexOf('**', boldStart + 2);
+                        if (boldEnd === -1) {
+                          // Unclosed bold, treat as regular text
+                          const remaining = lineText.slice(boldStart);
+                          if (remaining) {
+                            elements.push(<span key={`${lineIndex}-${partIndex++}`}>{remaining}</span>);
+                          }
+                          break;
+                        }
+                        
+                        // Add bold text
+                        const boldText = lineText.slice(boldStart + 2, boldEnd);
+                        if (boldText) {
+                          elements.push(<strong key={`${lineIndex}-${partIndex++}`} className="font-semibold text-foreground">{boldText}</strong>);
+                        }
+                        
+                        currentIndex = boldEnd + 2;
                       }
-                      return elements;
+                      
+                      return (
+                        <React.Fragment key={lineIndex}>
+                          {elements}
+                          {lineIndex < array.length - 1 && <br />}
+                        </React.Fragment>
+                      );
                     })}
                   </p>
                 );
@@ -131,20 +171,60 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                 // Regular paragraph - render markdown bold
                 return (
                   <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
-                    {trimmed.split('\n').flatMap((line, lineIndex, array) => {
-                      const parts = line.trim().split(/(\*\*[^*]+\*\*)/g);
-                      const elements = parts
-                        .filter(part => part.length > 0) // Filter out empty strings
-                        .map((part, i) => {
-                          if (part.startsWith('**') && part.endsWith('**')) {
-                            return <strong key={`${lineIndex}-${i}`} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                    {trimmed.split('\n').map((line, lineIndex, array) => {
+                      const lineText = line.trim();
+                      if (!lineText) return null;
+                      
+                      // Parse markdown bold manually
+                      const elements: React.ReactNode[] = [];
+                      let currentIndex = 0;
+                      let partIndex = 0;
+                      
+                      while (currentIndex < lineText.length) {
+                        const boldStart = lineText.indexOf('**', currentIndex);
+                        if (boldStart === -1) {
+                          // No more bold markers, add remaining text
+                          const remaining = lineText.slice(currentIndex);
+                          if (remaining) {
+                            elements.push(<span key={`${lineIndex}-${partIndex++}`}>{remaining}</span>);
                           }
-                          return <span key={`${lineIndex}-${i}`}>{part}</span>;
-                        });
-                      if (lineIndex < array.length - 1) {
-                        elements.push(<br key={`${lineIndex}-br`} />);
+                          break;
+                        }
+                        
+                        // Add text before bold
+                        if (boldStart > currentIndex) {
+                          const beforeBold = lineText.slice(currentIndex, boldStart);
+                          if (beforeBold) {
+                            elements.push(<span key={`${lineIndex}-${partIndex++}`}>{beforeBold}</span>);
+                          }
+                        }
+                        
+                        // Find end of bold
+                        const boldEnd = lineText.indexOf('**', boldStart + 2);
+                        if (boldEnd === -1) {
+                          // Unclosed bold, treat as regular text
+                          const remaining = lineText.slice(boldStart);
+                          if (remaining) {
+                            elements.push(<span key={`${lineIndex}-${partIndex++}`}>{remaining}</span>);
+                          }
+                          break;
+                        }
+                        
+                        // Add bold text
+                        const boldText = lineText.slice(boldStart + 2, boldEnd);
+                        if (boldText) {
+                          elements.push(<strong key={`${lineIndex}-${partIndex++}`} className="font-semibold text-foreground">{boldText}</strong>);
+                        }
+                        
+                        currentIndex = boldEnd + 2;
                       }
-                      return elements;
+                      
+                      return (
+                        <React.Fragment key={lineIndex}>
+                          {elements}
+                          {lineIndex < array.length - 1 && <br />}
+                        </React.Fragment>
+                      );
                     })}
                   </p>
                 );
