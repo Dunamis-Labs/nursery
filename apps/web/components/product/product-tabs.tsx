@@ -9,6 +9,10 @@ interface ProductTabsProps {
 }
 
 export function ProductTabs({ description, specifications, careInstructions }: ProductTabsProps) {
+  // Ensure all props are strings
+  const safeDescription = typeof description === 'string' ? description : String(description || '');
+  const safeCareInstructions = typeof careInstructions === 'string' ? careInstructions : String(careInstructions || '');
+  
   return (
     <Tabs defaultValue="description" className="mb-16">
       <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
@@ -36,26 +40,28 @@ export function ProductTabs({ description, specifications, careInstructions }: P
         <Card className="p-6 border-border">
           <div className="prose prose-sm max-w-none">
             {/* Check if description contains HTML tags */}
-            {description.includes('<') && description.includes('>') ? (
+            {safeDescription.includes('<') && safeDescription.includes('>') ? (
               <div
                 className="prose-p:text-foreground prose-p:leading-relaxed prose-p:mb-4 last:prose-p:mb-0"
-                dangerouslySetInnerHTML={{ __html: description }}
+                dangerouslySetInnerHTML={{ __html: safeDescription }}
               />
             ) : (
               // Plain text or markdown - split by double newlines for paragraphs, render markdown bold
-              description.split(/\n\n+/).map((paragraph, index) => {
+              safeDescription.split(/\n\n+/).map((paragraph, index) => {
                 const trimmed = paragraph.trim();
                 
                 return (
                   <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
                     {trimmed.split('\n').flatMap((line, lineIndex, array) => {
                       const parts = line.trim().split(/(\*\*[^*]+\*\*)/g);
-                      const elements = parts.map((part, i) => {
-                        if (part.startsWith('**') && part.endsWith('**')) {
-                          return <strong key={`${lineIndex}-${i}`} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
-                        }
-                        return <span key={`${lineIndex}-${i}`}>{part}</span>;
-                      });
+                      const elements = parts
+                        .filter(part => part.length > 0) // Filter out empty strings
+                        .map((part, i) => {
+                          if (part.startsWith('**') && part.endsWith('**')) {
+                            return <strong key={`${lineIndex}-${i}`} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                          }
+                          return <span key={`${lineIndex}-${i}`}>{part}</span>;
+                        });
                       if (lineIndex < array.length - 1) {
                         elements.push(<br key={`${lineIndex}-br`} />);
                       }
@@ -97,14 +103,14 @@ export function ProductTabs({ description, specifications, careInstructions }: P
         <Card className="p-6 border-border">
           <div className="prose prose-sm max-w-none">
             {/* Check if careInstructions contains HTML tags */}
-            {careInstructions.includes('<') && careInstructions.includes('>') ? (
+            {safeCareInstructions.includes('<') && safeCareInstructions.includes('>') ? (
               <div
                 className="prose-headings:font-serif prose-headings:text-foreground prose-headings:font-semibold prose-headings:mt-6 prose-headings:mb-3 first:prose-headings:mt-0 prose-p:text-foreground prose-p:leading-relaxed prose-p:mb-4 last:prose-p:mb-0"
-                dangerouslySetInnerHTML={{ __html: careInstructions }}
+                dangerouslySetInnerHTML={{ __html: safeCareInstructions }}
               />
             ) : (
               // Plain text - split by double newlines for paragraphs, handle markdown headings
-              careInstructions.split(/\n\n+/).map((paragraph, index) => {
+              safeCareInstructions.split(/\n\n+/).map((paragraph, index) => {
                 const trimmed = paragraph.trim();
                 
                 // Check if paragraph is a markdown heading
@@ -127,12 +133,14 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                   <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
                     {trimmed.split('\n').flatMap((line, lineIndex, array) => {
                       const parts = line.trim().split(/(\*\*[^*]+\*\*)/g);
-                      const elements = parts.map((part, i) => {
-                        if (part.startsWith('**') && part.endsWith('**')) {
-                          return <strong key={`${lineIndex}-${i}`} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
-                        }
-                        return <span key={`${lineIndex}-${i}`}>{part}</span>;
-                      });
+                      const elements = parts
+                        .filter(part => part.length > 0) // Filter out empty strings
+                        .map((part, i) => {
+                          if (part.startsWith('**') && part.endsWith('**')) {
+                            return <strong key={`${lineIndex}-${i}`} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                          }
+                          return <span key={`${lineIndex}-${i}`}>{part}</span>;
+                        });
                       if (lineIndex < array.length - 1) {
                         elements.push(<br key={`${lineIndex}-br`} />);
                       }
