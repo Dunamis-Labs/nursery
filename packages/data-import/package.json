@@ -13,11 +13,9 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "typescript": "^5.3.3",
-    "puppeteer": "^21.6.1",
-    "playwright": "^1.40.1"
+    "typescript": "^5.3.3"
   },
-  "peerDependencies": {
+  "optionalDependencies": {
     "puppeteer": "^21.6.1",
     "playwright": "^1.40.1"
   }
