@@ -101,7 +101,7 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                       
                       return (
                         <React.Fragment key={lineIndex}>
-                          {elements}
+                          {elements.map((el, idx) => el)}
                           {lineIndex < array.length - 1 && <br />}
                         </React.Fragment>
                       );
@@ -219,7 +219,7 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                       
                       return (
                         <React.Fragment key={lineIndex}>
-                          {elements}
+                          {elements.map((el, idx) => el)}
                           {lineIndex < array.length - 1 && <br />}
                         </React.Fragment>
                       );
