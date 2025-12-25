@@ -1,7 +1,7 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "apps/web/.next",
-  "installCommand": "npm ci --omit=optional && npm run db:generate && npm install --no-save --platform=linux --arch=x64 lightningcss || true",
+  "installCommand": "cd .. && npm ci --omit=optional && npm run db:generate --workspace=packages/db && cd apps/web && npm install --no-save --platform=linux --arch=x64 lightningcss lightningcss-linux-x64-gnu || true",
   "framework": "nextjs",
   "crons": [
     {
