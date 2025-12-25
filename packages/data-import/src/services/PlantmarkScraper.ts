@@ -1,16 +1,11 @@
 import type { PlantmarkProduct, PlantmarkApiConfig } from '../types';
 
 // Helper to make dynamic imports truly dynamic (prevents Turbopack from analyzing)
-const dynamicRequire = (moduleName: string) => {
-  if (typeof require !== 'undefined' && require.resolve) {
-    try {
-      require.resolve(moduleName);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  return false;
+// Uses Function constructor to create a truly dynamic import that can't be statically analyzed
+const dynamicImport = (moduleName: string) => {
+  // Use Function constructor to prevent static analysis
+  const importFunc = new Function('moduleName', 'return import(moduleName)');
+  return importFunc(moduleName);
 };
 
 /**
@@ -48,49 +43,53 @@ export class PlantmarkScraper {
       return;
     }
 
+    // Skip during build - these are runtime-only dependencies
+    // Check for build-time environment variables that indicate we're in a build
+    if (process.env.NEXT_PHASE === 'phase-production-build' || 
+        (process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV !== 'production')) {
+      throw new Error(
+        'Browser automation is not available during build. ' +
+        'This code should only run at runtime in API routes.'
+      );
+    }
+
     // Try Puppeteer first, fallback to Playwright
-    // These are optional dependencies - use try/catch to handle gracefully
-    // The imports are wrapped to prevent Turbopack from analyzing them at build time
+    // These are optional dependencies - use Function constructor to make imports truly dynamic
+    // This prevents Turbopack from statically analyzing the import paths
     
     // Try Puppeteer first
-    if (dynamicRequire('puppeteer')) {
-      try {
-        // Use string-based import to make it truly dynamic
-        const moduleName = 'puppeteer';
-        const puppeteer = await import(moduleName);
-        this.browser = await puppeteer.launch({
-          headless: 'new',
-          args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        });
-        (this.browser as any).__isPuppeteer = true;
-        // For Puppeteer, browser context is implicit - cookies are shared automatically
-        this.browserContext = this.browser;
-        return;
-      } catch (error) {
-        // Fall through to Playwright
-      }
+    try {
+      const puppeteer = await dynamicImport('puppeteer');
+      this.browser = await puppeteer.launch({
+        headless: 'new',
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
+      (this.browser as any).__isPuppeteer = true;
+      // For Puppeteer, browser context is implicit - cookies are shared automatically
+      this.browserContext = this.browser;
+      return;
+    } catch (error) {
+      // Fall through to Playwright
     }
 
     // Try Playwright as fallback
-    if (dynamicRequire('playwright')) {
-      try {
-        const moduleName = 'playwright';
-        const { chromium } = await import(moduleName);
-        this.browser = await chromium.launch({
-          headless: true,
-        });
-        (this.browser as any).__isPlaywright = true;
-        // For Playwright, create a persistent context to maintain cookies
-        // Use sameSite: 'Lax' and sameOrigin: true to ensure cookies persist
-        this.browserContext = await this.browser.newContext({
-          viewport: { width: 1920, height: 1080 },
-          // Ensure cookies persist across navigations
-          storageState: undefined, // We'll set cookies manually
-        });
-        return;
-      } catch (error) {
-        // Continue to error
-      }
+    try {
+      const playwright = await dynamicImport('playwright');
+      const { chromium } = playwright;
+      this.browser = await chromium.launch({
+        headless: true,
+      });
+      (this.browser as any).__isPlaywright = true;
+      // For Playwright, create a persistent context to maintain cookies
+      // Use sameSite: 'Lax' and sameOrigin: true to ensure cookies persist
+      this.browserContext = await this.browser.newContext({
+        viewport: { width: 1920, height: 1080 },
+        // Ensure cookies persist across navigations
+        storageState: undefined, // We'll set cookies manually
+      });
+      return;
+    } catch (error) {
+      // Continue to error
     }
 
     throw new Error(
