@@ -14,7 +14,6 @@
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@nursery/api-client": "*",
-    "@nursery/data-import": "*",
     "@nursery/db": "*",
     "@nursery/fulfillment": "*",
     "@nursery/shared": "*",
@@ -85,6 +84,7 @@
     "vitest": "^1.2.1"
   },
   "optionalDependencies": {
+    "@nursery/data-import": "*",
     "lightningcss-linux-x64-gnu": "^1.30.0"
   }
 }

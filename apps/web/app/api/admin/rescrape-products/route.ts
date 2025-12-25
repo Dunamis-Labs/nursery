@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@nursery/db';
 import { Prisma } from '@prisma/client';
-import { generateSlug } from '@nursery/data-import';
 
 // Force server-side only
 export const runtime = 'nodejs';
@@ -57,9 +56,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Use lazy getter to prevent build-time analysis
-    const { getPlantmarkScraper } = await import('@nursery/data-import');
-    const PlantmarkScraper = await getPlantmarkScraper();
-    const { DataImportService } = await import('@nursery/data-import');
+    // This package is optional and not available on Vercel
+    let getPlantmarkScraper, PlantmarkScraper, DataImportService;
+    try {
+      const module = await import('@nursery/data-import');
+      getPlantmarkScraper = module.getPlantmarkScraper;
+      PlantmarkScraper = await getPlantmarkScraper();
+      DataImportService = module.DataImportService;
+    } catch (error) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Scraping service is not available in this environment',
+          details: 'Scraping functionality is only available in local development'
+        },
+        { status: 503 }
+      );
+    }
 
     // Check environment variables (strip quotes if present)
     const plantmarkEmail = process.env.PLANTMARK_EMAIL?.replace(/^"|"$/g, '') || '';
@@ -267,6 +280,15 @@ export async function POST(request: NextRequest) {
               
               // Find the scraped category using the same slug generation as DataImportService
               const scrapedCategoryName = scrapedProduct.category;
+              // Dynamic import to prevent build-time analysis (package is optional)
+              let generateSlug;
+              try {
+                const module = await import('@nursery/data-import');
+                generateSlug = module.generateSlug;
+              } catch (error) {
+                // Fallback slug generation if package not available
+                generateSlug = (name: string) => name.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
+              }
               const scrapedCategorySlug = generateSlug(scrapedCategoryName);
               
               // Find the category by slug first

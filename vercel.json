@@ -20,10 +20,6 @@
       "path": "/api/cron/experiment-monitoring",
       "schedule": "*/30 * * * *"
     },
-    {
-      "path": "/api/cron/data-import",
-      "schedule": "0 1 * * *"
-    }
   ]
 }
 

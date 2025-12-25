@@ -20,7 +20,21 @@ export async function POST(request: NextRequest) {
     const validatedData = createImportJobSchema.parse(body);
 
     // Dynamic import to prevent build-time analysis of optional dependencies
-    const { DataImportService } = await import('@nursery/data-import');
+    // This package is optional and not available on Vercel
+    let DataImportService;
+    try {
+      const module = await import('@nursery/data-import');
+      DataImportService = module.DataImportService;
+    } catch (error) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Data import service is not available in this environment',
+          details: 'Scraping functionality is only available in local development'
+        },
+        { status: 503 }
+      );
+    }
     
     // Initialize import service
     const importService = new DataImportService({

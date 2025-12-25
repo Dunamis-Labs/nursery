@@ -110,8 +110,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Use lazy getter to prevent build-time analysis
-    const { getPlantmarkScraper } = await import('@nursery/data-import');
-    const PlantmarkScraper = await getPlantmarkScraper();
+    // This package is optional and not available on Vercel
+    let getPlantmarkScraper, PlantmarkScraper;
+    try {
+      const module = await import('@nursery/data-import');
+      getPlantmarkScraper = module.getPlantmarkScraper;
+      PlantmarkScraper = await getPlantmarkScraper();
+    } catch (error) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Scraping service is not available in this environment',
+          details: 'Scraping functionality is only available in local development'
+        },
+        { status: 503 }
+      );
+    }
     
     // Initialize scraper
     const scraper = new PlantmarkScraper({
