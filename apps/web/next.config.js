@@ -13,6 +13,18 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true, // Temporary: React 19 type compatibility issues with Radix UI
   },
+  webpack: (config, { isServer }) => {
+    // Ignore optional scraping packages during build to prevent hanging
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        '@nursery/data-import': 'commonjs @nursery/data-import',
+        'puppeteer': 'commonjs puppeteer',
+        'playwright': 'commonjs playwright',
+      });
+    }
+    return config;
+  },
   images: {
     remotePatterns: [
       {
