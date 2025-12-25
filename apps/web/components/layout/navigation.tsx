@@ -32,6 +32,7 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Category } from "@prisma/client"
+import { SearchBar } from "@/components/search/search-bar"
 
 interface NavigationProps {
   categories?: Category[]
@@ -322,10 +323,7 @@ export function Navigation({ categories = [] }: NavigationProps) {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Temporarily removed SearchBar to test */}
-            <button className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors" aria-label="Search">
-              <Search className="h-5 w-5" />
-            </button>
+            <SearchBar />
             <Link href="/account">
               <Button variant="ghost" size="icon" className="hover:bg-[#87a96b]/10">
                 <User className="h-5 w-5 text-[#2c2c2c]" />
