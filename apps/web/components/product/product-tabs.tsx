@@ -60,8 +60,7 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                       
                       return (
                         <React.Fragment key={lineIndex}>
-                          {parts.map((part, partIndex) => {
-                            if (!part) return null;
+                          {parts.filter(part => part && part.length > 0).map((part, partIndex) => {
                             if (part.startsWith('**') && part.endsWith('**')) {
                               return <strong key={`${lineIndex}-${partIndex}`} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
                             }
@@ -143,8 +142,7 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                       
                       return (
                         <React.Fragment key={lineIndex}>
-                          {parts.map((part, partIndex) => {
-                            if (!part) return null;
+                          {parts.filter(part => part && part.length > 0).map((part, partIndex) => {
                             if (part.startsWith('**') && part.endsWith('**')) {
                               return <strong key={`${lineIndex}-${partIndex}`} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
                             }
