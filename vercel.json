@@ -19,7 +19,7 @@
     {
       "path": "/api/cron/experiment-monitoring",
       "schedule": "*/30 * * * *"
-    },
+    }
   ]
 }
 
