@@ -1,6 +1,7 @@
 {
+  "rootDirectory": "apps/web",
   "buildCommand": "NEXT_PRIVATE_SKIP_LIGHTNINGCSS=1 npm run build",
-  "outputDirectory": "apps/web/.next",
+  "outputDirectory": ".next",
   "installCommand": "npm ci --omit=optional && npm run db:generate --workspace=@nursery/db && npm install --no-save --workspace=@nursery/web --platform=linux --arch=x64 lightningcss lightningcss-linux-x64-gnu || true",
   "framework": "nextjs",
   "crons": [
