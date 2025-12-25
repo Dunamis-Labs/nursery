@@ -78,7 +78,8 @@ function CategoryTile({
             alt={category.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
-            unoptimized
+            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            quality={85}
             onError={handleError}
           />
         </div>

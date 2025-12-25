@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 
 interface CategoryHeroProps {
   name: string
@@ -21,10 +22,14 @@ export function CategoryHero({ name, description, image }: CategoryHeroProps) {
 
   return (
     <section className="relative h-[300px] md:h-[400px] flex items-center justify-center overflow-hidden bg-gray-200">
-      <img
+      <Image
         src={imgSrc}
         alt=""
-        className="absolute inset-0 w-full h-full object-cover"
+        fill
+        className="object-cover"
+        sizes="100vw"
+        priority
+        quality={85}
         onError={handleError}
         aria-hidden="true"
       />
