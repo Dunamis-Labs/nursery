@@ -48,19 +48,18 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                 
                 return (
                   <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
-                    {trimmed.split('\n').map((line, lineIndex, array) => {
+                    {trimmed.split('\n').flatMap((line, lineIndex, array) => {
                       const parts = line.trim().split(/(\*\*[^*]+\*\*)/g);
-                      return (
-                        <React.Fragment key={lineIndex}>
-                          {parts.map((part, i) => {
-                            if (part.startsWith('**') && part.endsWith('**')) {
-                              return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
-                            }
-                            return <span key={i}>{part}</span>;
-                          })}
-                          {lineIndex < array.length - 1 && <br />}
-                        </React.Fragment>
-                      );
+                      const elements = parts.map((part, i) => {
+                        if (part.startsWith('**') && part.endsWith('**')) {
+                          return <strong key={`${lineIndex}-${i}`} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                        }
+                        return <span key={`${lineIndex}-${i}`}>{part}</span>;
+                      });
+                      if (lineIndex < array.length - 1) {
+                        elements.push(<br key={`${lineIndex}-br`} />);
+                      }
+                      return elements;
                     })}
                   </p>
                 );
@@ -126,19 +125,18 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                 // Regular paragraph - render markdown bold
                 return (
                   <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
-                    {trimmed.split('\n').map((line, lineIndex, array) => {
+                    {trimmed.split('\n').flatMap((line, lineIndex, array) => {
                       const parts = line.trim().split(/(\*\*[^*]+\*\*)/g);
-                      return (
-                        <React.Fragment key={lineIndex}>
-                          {parts.map((part, i) => {
-                            if (part.startsWith('**') && part.endsWith('**')) {
-                              return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
-                            }
-                            return <span key={i}>{part}</span>;
-                          })}
-                          {lineIndex < array.length - 1 && <br />}
-                        </React.Fragment>
-                      );
+                      const elements = parts.map((part, i) => {
+                        if (part.startsWith('**') && part.endsWith('**')) {
+                          return <strong key={`${lineIndex}-${i}`} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                        }
+                        return <span key={`${lineIndex}-${i}`}>{part}</span>;
+                      });
+                      if (lineIndex < array.length - 1) {
+                        elements.push(<br key={`${lineIndex}-br`} />);
+                      }
+                      return elements;
                     })}
                   </p>
                 );
