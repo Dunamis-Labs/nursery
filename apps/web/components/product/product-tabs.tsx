@@ -1,4 +1,3 @@
-import React from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card"
 
@@ -9,10 +8,6 @@ interface ProductTabsProps {
 }
 
 export function ProductTabs({ description, specifications, careInstructions }: ProductTabsProps) {
-  // Ensure all props are strings
-  const safeDescription = typeof description === 'string' ? description : String(description || '');
-  const safeCareInstructions = typeof careInstructions === 'string' ? careInstructions : String(careInstructions || '');
-  
   return (
     <Tabs defaultValue="description" className="mb-16">
       <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
@@ -40,36 +35,35 @@ export function ProductTabs({ description, specifications, careInstructions }: P
         <Card className="p-6 border-border">
           <div className="prose prose-sm max-w-none">
             {/* Check if description contains HTML tags */}
-            {safeDescription.includes('<') && safeDescription.includes('>') ? (
+            {description.includes('<') && description.includes('>') ? (
               <div
                 className="prose-p:text-foreground prose-p:leading-relaxed prose-p:mb-4 last:prose-p:mb-0"
-                dangerouslySetInnerHTML={{ __html: safeDescription }}
+                dangerouslySetInnerHTML={{ __html: description }}
               />
             ) : (
               // Plain text or markdown - split by double newlines for paragraphs, render markdown bold
-              safeDescription.split(/\n\n+/).map((paragraph, index) => {
+              description.split(/\n\n+/).map((paragraph, index) => {
                 const trimmed = paragraph.trim();
+                
+                // Render markdown bold (**text**) as <strong>
+                const renderMarkdown = (text: string) => {
+                  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+                  return parts.map((part, i) => {
+                    if (part.startsWith('**') && part.endsWith('**')) {
+                      return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                    }
+                    return <span key={i}>{part}</span>;
+                  });
+                };
                 
                 return (
                   <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
-                    {trimmed.split('\n').filter(line => line.trim().length > 0).map((line, lineIndex, array) => {
-                      const lineText = line.trim();
-                      
-                      // Simple markdown bold parsing - split and render inline
-                      const parts = lineText.split(/(\*\*[^*]+\*\*)/g).filter(p => p && p.length > 0);
-                      
-                      return (
-                        <React.Fragment key={lineIndex}>
-                          {parts.filter(part => part && part.length > 0).map((part, partIndex) => {
-                            if (part.startsWith('**') && part.endsWith('**')) {
-                              return <strong key={`${lineIndex}-${partIndex}`} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
-                            }
-                            return <span key={`${lineIndex}-${partIndex}`}>{part}</span>;
-                          })}
-                          {lineIndex < array.length - 1 && <br />}
-                        </React.Fragment>
-                      );
-                    })}
+                    {trimmed.split('\n').map((line, lineIndex, array) => (
+                      <span key={lineIndex}>
+                        {renderMarkdown(line.trim())}
+                        {lineIndex < array.length - 1 && <br />}
+                      </span>
+                    ))}
                   </p>
                 );
               })
@@ -106,14 +100,14 @@ export function ProductTabs({ description, specifications, careInstructions }: P
         <Card className="p-6 border-border">
           <div className="prose prose-sm max-w-none">
             {/* Check if careInstructions contains HTML tags */}
-            {safeCareInstructions.includes('<') && safeCareInstructions.includes('>') ? (
+            {careInstructions.includes('<') && careInstructions.includes('>') ? (
               <div
                 className="prose-headings:font-serif prose-headings:text-foreground prose-headings:font-semibold prose-headings:mt-6 prose-headings:mb-3 first:prose-headings:mt-0 prose-p:text-foreground prose-p:leading-relaxed prose-p:mb-4 last:prose-p:mb-0"
-                dangerouslySetInnerHTML={{ __html: safeCareInstructions }}
+                dangerouslySetInnerHTML={{ __html: careInstructions }}
               />
             ) : (
               // Plain text - split by double newlines for paragraphs, handle markdown headings
-              safeCareInstructions.split(/\n\n+/).map((paragraph, index) => {
+              careInstructions.split(/\n\n+/).map((paragraph, index) => {
                 const trimmed = paragraph.trim();
                 
                 // Check if paragraph is a markdown heading
@@ -132,26 +126,24 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                 }
                 
                 // Regular paragraph - render markdown bold
+                const renderMarkdown = (text: string) => {
+                  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+                  return parts.map((part, i) => {
+                    if (part.startsWith('**') && part.endsWith('**')) {
+                      return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                    }
+                    return <span key={i}>{part}</span>;
+                  });
+                };
+                
                 return (
                   <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
-                    {trimmed.split('\n').filter(line => line.trim().length > 0).map((line, lineIndex, array) => {
-                      const lineText = line.trim();
-                      
-                      // Simple markdown bold parsing - split and render inline
-                      const parts = lineText.split(/(\*\*[^*]+\*\*)/g).filter(p => p && p.length > 0);
-                      
-                      return (
-                        <React.Fragment key={lineIndex}>
-                          {parts.filter(part => part && part.length > 0).map((part, partIndex) => {
-                            if (part.startsWith('**') && part.endsWith('**')) {
-                              return <strong key={`${lineIndex}-${partIndex}`} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
-                            }
-                            return <span key={`${lineIndex}-${partIndex}`}>{part}</span>;
-                          })}
-                          {lineIndex < array.length - 1 && <br />}
-                        </React.Fragment>
-                      );
-                    })}
+                    {trimmed.split('\n').map((line, lineIndex, array) => (
+                      <span key={lineIndex}>
+                        {renderMarkdown(line.trim())}
+                        {lineIndex < array.length - 1 && <br />}
+                      </span>
+                    ))}
                   </p>
                 );
               })
