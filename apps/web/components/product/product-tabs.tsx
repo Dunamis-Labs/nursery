@@ -56,11 +56,12 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                       const lineText = line.trim();
                       
                       // Simple markdown bold parsing - split and render inline
-                      const parts = lineText.split(/(\*\*[^*]+\*\*)/g).filter(p => p.length > 0);
+                      const parts = lineText.split(/(\*\*[^*]+\*\*)/g).filter(p => p && p.length > 0);
                       
                       return (
                         <React.Fragment key={lineIndex}>
                           {parts.map((part, partIndex) => {
+                            if (!part) return null;
                             if (part.startsWith('**') && part.endsWith('**')) {
                               return <strong key={`${lineIndex}-${partIndex}`} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
                             }
@@ -138,11 +139,12 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                       const lineText = line.trim();
                       
                       // Simple markdown bold parsing - split and render inline
-                      const parts = lineText.split(/(\*\*[^*]+\*\*)/g).filter(p => p.length > 0);
+                      const parts = lineText.split(/(\*\*[^*]+\*\*)/g).filter(p => p && p.length > 0);
                       
                       return (
                         <React.Fragment key={lineIndex}>
                           {parts.map((part, partIndex) => {
+                            if (!part) return null;
                             if (part.startsWith('**') && part.endsWith('**')) {
                               return <strong key={`${lineIndex}-${partIndex}`} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
                             }

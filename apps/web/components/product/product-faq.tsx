@@ -58,16 +58,12 @@ export function ProductFAQ({ faqs }: ProductFAQProps) {
               {faq.question}
             </AccordionTrigger>
             <AccordionContent className="text-muted-foreground leading-relaxed">
-              {(() => {
-                // Render markdown bold (**text**) as <strong>
-                const parts = faq.answer.split(/(\*\*[^*]+\*\*)/g);
-                return parts.map((part, i) => {
-                  if (part.startsWith('**') && part.endsWith('**')) {
-                    return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
-                  }
-                  return <span key={i}>{part}</span>;
-                });
-              })()}
+              {faq.answer.split(/(\*\*[^*]+\*\*)/g).filter(part => part.length > 0).map((part, i) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                  return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                }
+                return <span key={i}>{part}</span>;
+              })}
             </AccordionContent>
           </AccordionItem>
         ))}
