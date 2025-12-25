@@ -7,7 +7,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@nursery/shared', '@nursery/db', '@nursery/api-client', '@nursery/fulfillment'],
-  serverExternalPackages: ['@nursery/data-import', 'puppeteer', 'playwright', 'lightningcss'],
+  serverExternalPackages: ['@nursery/data-import', 'puppeteer', 'playwright'],
   images: {
     remotePatterns: [
       {
