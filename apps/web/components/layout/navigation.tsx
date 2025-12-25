@@ -26,10 +26,10 @@ import {
   CircleDot,
   Grid3x3,
   Scissors,
+  Search,
 } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { SearchBar } from "@/components/search/search-bar"
 import Image from "next/image"
 import { Category } from "@prisma/client"
 
@@ -39,23 +39,22 @@ interface NavigationProps {
 
 // Comprehensive icon mapping for all 15 Plantmark categories
 // Icons chosen to be visually distinct and representative of each category
-const categoryIcons: Record<string, any> = {
+const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   'Trees': TreePine,
   'Shrubs': TreeDeciduous,
-  'Grasses': Grid3x3, // Grid pattern represents grasses
-  'Hedging and Screening': Layers, // Layers represent hedges/screens
-  'Groundcovers': CircleDot, // Dots represent ground coverage
-  'Climbers': Sprout, // Growing upward represents climbers
-  'Palms, Ferns & Tropical': TreePine, // Tropical trees
+  'Grasses': Grid3x3,
+  'Hedging and Screening': Layers,
+  'Groundcovers': CircleDot,
+  'Climbers': Sprout,
+  'Palms, Ferns & Tropical': TreePine,
   'Conifers': TreePine,
-  'Roses': Flower2, // Flower icon for roses
-  'Succulents & Cacti': Flower2, // Succulent flowers
-  'Citrus & Fruit': Apple, // Fruit icon
-  'Herbs & Vegetables': Carrot, // Vegetable icon
-  'Water Plants': Waves, // Water/waves icon
-  'Indoor Plants': Leaf, // Leaf for indoor plants
-  'Garden Products': Package, // Package for products
-  // Fallbacks for variations
+  'Roses': Flower2,
+  'Succulents & Cacti': Flower2,
+  'Citrus & Fruit': Apple,
+  'Herbs & Vegetables': Carrot,
+  'Water Plants': Waves,
+  'Indoor Plants': Leaf,
+  'Garden Products': Package,
   'Succulents': Flower2,
   'Perennials': Flower2,
   'Outdoor Plants': TreeDeciduous,
@@ -83,21 +82,62 @@ export function Navigation({ categories = [] }: NavigationProps) {
       return true
     })
     .map(cat => ({
-    name: cat.name,
-    slug: cat.slug,
-    image: "/placeholder.svg", // TODO: Add image field to Category model
-    description: `${cat.name} plants`,
-    icon: categoryIcons[cat.name] || Leaf,
-  }))
+      name: cat.name,
+      slug: cat.slug,
+      image: "/placeholder.svg", // TODO: Add image field to Category model
+      description: `${cat.name} plants`,
+      icon: categoryIcons[cat.name] || Leaf,
+    }))
     .sort((a, b) => a.name.localeCompare(b.name))
+
+  // Don't render Sheet/Dialog on server to avoid Context Provider issues
+  if (!mounted) {
+    return (
+      <nav className="sticky top-0 z-50 bg-white border-b border-[#e5e7eb] shadow-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-8">
+              <button className="lg:hidden p-2 hover:bg-[#87a96b]/10 rounded-md transition-colors" aria-label="Menu">
+                <Menu className="h-6 w-6 text-[#2c2c2c]" />
+              </button>
+              <Link href="/" className="flex items-center gap-2">
+                <Image src="/logo.svg" alt="The Plant Nursery" width={120} height={40} className="h-10 w-auto" />
+              </Link>
+            </div>
+            <div className="hidden lg:flex items-center gap-6">
+              <Link href="/plant-finder" className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Plant Finder</Link>
+              <Link href="/plant-care" className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Plant Care</Link>
+              <Link href="/guides" className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Guides</Link>
+              <Link href="/blog" className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Blog</Link>
+              <Link href="/about" className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">About</Link>
+            </div>
+            <div className="flex items-center gap-4">
+              <button className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors" aria-label="Search">
+                <Search className="h-5 w-5" />
+              </button>
+              <Link href="/account" aria-label="Account">
+                <Button variant="ghost" size="icon" className="hover:bg-[#87a96b]/10">
+                  <User className="h-5 w-5 text-[#2c2c2c]" />
+                </Button>
+              </Link>
+              <Link href="/cart" aria-label="Cart">
+                <Button variant="ghost" size="icon" className="hover:bg-[#87a96b]/10">
+                  <ShoppingCart className="h-5 w-5 text-[#2c2c2c]" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+    )
+  }
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-[#e5e7eb] shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
-            {mounted ? (
-              <Sheet open={open} onOpenChange={setOpen}>
+            <Sheet open={open} onOpenChange={setOpen}>
                 <SheetTrigger asChild>
                   <button className="lg:hidden p-2 hover:bg-[#87a96b]/10 rounded-md transition-colors">
                     <Menu className="h-6 w-6 text-[#2c2c2c]" />
@@ -128,7 +168,7 @@ export function Navigation({ categories = [] }: NavigationProps) {
                         </span>
                       </div>
                       {navCategories.map((category) => {
-                        const Icon = category.icon || Leaf
+                        const Icon = category.icon;
                         return (
                           <Link
                             key={category.slug}
@@ -202,11 +242,6 @@ export function Navigation({ categories = [] }: NavigationProps) {
                 </div>
               </SheetContent>
             </Sheet>
-            ) : (
-              <button className="lg:hidden p-2 hover:bg-[#87a96b]/10 rounded-md transition-colors">
-                <Menu className="h-6 w-6 text-[#2c2c2c]" />
-              </button>
-            )}
 
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <Image src="/logo.svg" alt="The Plant Nursery" width={36} height={36} className="h-9 w-auto" />
@@ -224,7 +259,7 @@ export function Navigation({ categories = [] }: NavigationProps) {
                   <div className="p-6">
                     <div className="grid grid-cols-3 gap-3">
                       {navCategories.map((category) => {
-                        const Icon = category.icon || Leaf
+                        const Icon = category.icon;
                         return (
                           <Link
                             key={category.slug}
@@ -287,7 +322,10 @@ export function Navigation({ categories = [] }: NavigationProps) {
           </div>
 
           <div className="flex items-center gap-4">
-            <SearchBar />
+            {/* Temporarily removed SearchBar to test */}
+            <button className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors" aria-label="Search">
+              <Search className="h-5 w-5" />
+            </button>
             <Link href="/account">
               <Button variant="ghost" size="icon" className="hover:bg-[#87a96b]/10">
                 <User className="h-5 w-5 text-[#2c2c2c]" />

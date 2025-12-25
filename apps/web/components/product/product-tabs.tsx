@@ -1,3 +1,4 @@
+import React from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card"
 
@@ -45,25 +46,26 @@ export function ProductTabs({ description, specifications, careInstructions }: P
               description.split(/\n\n+/).map((paragraph, index) => {
                 const trimmed = paragraph.trim();
                 
-                // Render markdown bold (**text**) as <strong>
-                const renderMarkdown = (text: string) => {
-                  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-                  return parts.map((part, i) => {
-                    if (part.startsWith('**') && part.endsWith('**')) {
-                      return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
-                    }
-                    return <span key={i}>{part}</span>;
-                  });
-                };
-                
                 return (
                   <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
-                    {trimmed.split('\n').map((line, lineIndex, array) => (
-                      <span key={lineIndex}>
-                        {renderMarkdown(line.trim())}
-                        {lineIndex < array.length - 1 && <br />}
-                      </span>
-                    ))}
+                    {trimmed.split('\n').map((line, lineIndex, array) => {
+                      // Render markdown bold (**text**) as <strong>
+                      const parts = line.trim().split(/(\*\*[^*]+\*\*)/g);
+                      // #region agent log
+                      console.error('[DEBUG] product-tabs.tsx:51 renderMarkdown parts', JSON.stringify({partsCount:parts.length,partsTypes:parts.map(p=>typeof p),firstPartType:parts[0]?typeof parts[0]:null,hypothesisId:'B'}));
+                      // #endregion
+                      return (
+                        <React.Fragment key={lineIndex}>
+                          {parts.map((part, i) => {
+                            if (part.startsWith('**') && part.endsWith('**')) {
+                              return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                            }
+                            return <span key={i}>{part}</span>;
+                          })}
+                          {lineIndex < array.length - 1 && <br />}
+                        </React.Fragment>
+                      );
+                    })}
                   </p>
                 );
               })
@@ -138,12 +140,23 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                 
                 return (
                   <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
-                    {trimmed.split('\n').map((line, lineIndex, array) => (
-                      <span key={lineIndex}>
-                        {renderMarkdown(line.trim())}
-                        {lineIndex < array.length - 1 && <br />}
-                      </span>
-                    ))}
+                    {trimmed.split('\n').map((line, lineIndex, array) => {
+                      const markdownResult = renderMarkdown(line.trim());
+                      // #region agent log
+                      console.error('[DEBUG] product-tabs.tsx:142 renderMarkdown result', JSON.stringify({isArray:Array.isArray(markdownResult),resultType:typeof markdownResult,resultLength:Array.isArray(markdownResult)?markdownResult.length:null,firstItemType:Array.isArray(markdownResult)&&markdownResult[0]?typeof markdownResult[0]:null,hypothesisId:'B'}));
+                      // #endregion
+                      // #region agent log
+                      if (!Array.isArray(markdownResult)) {
+                        console.error('[DEBUG] product-tabs.tsx:150 ERROR markdownResult is not array!', JSON.stringify({type:typeof markdownResult,value:markdownResult}));
+                      }
+                      // #endregion
+                      return (
+                        <React.Fragment key={lineIndex}>
+                          {Array.isArray(markdownResult) ? markdownResult : <span>{String(markdownResult)}</span>}
+                          {lineIndex < array.length - 1 && <br />}
+                        </React.Fragment>
+                      );
+                    })}
                   </p>
                 );
               })

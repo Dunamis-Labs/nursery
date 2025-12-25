@@ -12,9 +12,23 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Ensure DATABASE_URL is set and valid
+// #region agent log
+const envCheck = {
+  DATABASE_URL: !!process.env.DATABASE_URL,
+  DATABASE_URL_NON_POOLING: !!process.env.DATABASE_URL_NON_POOLING,
+  POSTGRES_URL_NON_POOLING: !!process.env.POSTGRES_URL_NON_POOLING,
+  NODE_ENV: process.env.NODE_ENV,
+  allEnvKeys: Object.keys(process.env).filter(k => k.includes('DATABASE') || k.includes('POSTGRES')),
+};
+fetch('http://127.0.0.1:7242/ingest/349c6429-fdf5-4459-8ed5-e0d69f4124fc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'packages/db/src/index.ts:15',message:'DATABASE_URL env check',data:envCheck,timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+// #endregion
+
 const databaseUrl = process.env.DATABASE_URL || process.env.DATABASE_URL_NON_POOLING || process.env.POSTGRES_URL_NON_POOLING;
 
 if (!databaseUrl) {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/349c6429-fdf5-4459-8ed5-e0d69f4124fc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'packages/db/src/index.ts:25',message:'DATABASE_URL missing - throwing error',data:{envCheck},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
   throw new Error(
     'DATABASE_URL is not set. Please set DATABASE_URL, DATABASE_URL_NON_POOLING, or POSTGRES_URL_NON_POOLING in your environment variables.'
   );

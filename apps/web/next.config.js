@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
-// Note: Next.js automatically loads .env files from the project root
-// Vercel provides environment variables automatically, no dotenv needed
+// Note: Next.js automatically loads .env files from the project root (apps/web)
+// For monorepo, we also load from workspace root
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const nextConfig = {
   reactStrictMode: true,

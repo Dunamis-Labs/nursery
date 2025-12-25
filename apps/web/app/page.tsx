@@ -6,10 +6,6 @@ import { FeaturedProducts } from '@/components/product/featured-products';
 import { Footer } from '@/components/layout/footer';
 import { MAIN_CATEGORIES } from '@/lib/constants/categories';
 
-// Import other components if they exist, or create placeholder versions
-// import { ShopByPurpose } from '@/components/shop-by-purpose';
-// import { LatestGuides } from '@/components/latest-guides';
-
 export default async function HomePage() {
   // Fetch only the 15 main categories
   const categories = await prisma.category.findMany({
@@ -62,9 +58,7 @@ export default async function HomePage() {
       <main>
         <HeroSection />
         <CategoryGrid categories={categories} />
-        {/* <ShopByPurpose /> */}
         <FeaturedProducts products={featuredProducts} />
-        {/* <LatestGuides /> */}
       </main>
       <Footer />
     </div>
