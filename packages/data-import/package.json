@@ -18,6 +18,14 @@
   "optionalDependencies": {
     "puppeteer": "^21.6.1",
     "playwright": "^1.40.1"
+  },
+  "peerDependenciesMeta": {
+    "puppeteer": {
+      "optional": true
+    },
+    "playwright": {
+      "optional": true
+    }
   }
 }
 
