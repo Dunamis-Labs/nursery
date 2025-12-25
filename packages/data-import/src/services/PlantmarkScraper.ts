@@ -4,6 +4,7 @@ import type { PlantmarkProduct, PlantmarkApiConfig } from '../types';
 // Uses Function constructor to create a truly dynamic import that can't be statically analyzed
 const dynamicImport = (moduleName: string) => {
   // Use Function constructor to prevent static analysis
+  // This creates a function at runtime that Turbopack can't analyze
   const importFunc = new Function('moduleName', 'return import(moduleName)');
   return importFunc(moduleName);
 };

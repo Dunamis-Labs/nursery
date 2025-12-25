@@ -8,17 +8,6 @@ const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@nursery/shared', '@nursery/db', '@nursery/api-client', '@nursery/fulfillment'],
   serverExternalPackages: ['@nursery/data-import', 'puppeteer', 'playwright'],
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      // Mark these as external to prevent bundling
-      config.externals = config.externals || [];
-      config.externals.push({
-        'puppeteer': 'commonjs puppeteer',
-        'playwright': 'commonjs playwright',
-      });
-    }
-    return config;
-  },
   images: {
     remotePatterns: [
       {
