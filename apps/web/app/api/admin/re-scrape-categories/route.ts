@@ -98,8 +98,20 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔧 Starting category re-scrape (limit: ${maxProducts})...`);
 
-    // Dynamically import PlantmarkScraper to avoid client-side code issues
-    const { PlantmarkScraper } = await import('@nursery/data-import');
+    // Only import in development/local - skip during build
+    if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Scraping is only available in local development environment',
+        },
+        { status: 403 }
+      );
+    }
+
+    // Use lazy getter to prevent build-time analysis
+    const { getPlantmarkScraper } = await import('@nursery/data-import');
+    const PlantmarkScraper = await getPlantmarkScraper();
     
     // Initialize scraper
     const scraper = new PlantmarkScraper({

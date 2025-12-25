@@ -15,8 +15,20 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔧 Starting product rescrape (limit: ${maxProducts}, missingImagesOnly: ${onlyMissingImages})...`);
 
-    // Dynamically import to avoid bundling issues
-    const { PlantmarkScraper } = await import('@nursery/data-import');
+    // Only import in development/local - skip during build
+    if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Scraping is only available in local development environment',
+        },
+        { status: 403 }
+      );
+    }
+
+    // Use lazy getter to prevent build-time analysis
+    const { getPlantmarkScraper } = await import('@nursery/data-import');
+    const PlantmarkScraper = await getPlantmarkScraper();
     const { DataImportService } = await import('@nursery/data-import');
 
     // Check environment variables (strip quotes if present)
