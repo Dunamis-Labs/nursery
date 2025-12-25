@@ -54,7 +54,7 @@ export default function AboutPage() {
             </section>
 
             {/* How Plants Are Selected */}
-            <section className="mb-12 bg-[#faf9f6] p-8 rounded-lg border border-[#e5e7eb]">
+            <section className="mb-12 bg-[#faf9f6] p-8 rounded-lg border border-[#9ca3af]">
               <h2 className="font-serif text-3xl font-bold text-[#2d5016] mb-6">How We Select Our Plants</h2>
 
               <div className="space-y-4 text-[#2c2c2c] leading-relaxed">
@@ -140,7 +140,7 @@ export default function AboutPage() {
             </section>
 
             {/* How This Site Is Structured */}
-            <section className="mb-12 bg-[#87a96b]/10 p-8 rounded-lg border border-[#87a96b]/20">
+            <section className="mb-12 bg-[#87a96b]/10 p-8 rounded-lg border border-[#87a96b]/40">
               <h2 className="font-serif text-3xl font-bold text-[#2d5016] mb-6">How to Use This Site</h2>
 
               <div className="space-y-4 text-[#2c2c2c] leading-relaxed">
