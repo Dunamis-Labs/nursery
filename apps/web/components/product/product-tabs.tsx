@@ -1,3 +1,4 @@
+import React from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card"
 
@@ -59,10 +60,10 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                 return (
                   <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
                     {trimmed.split('\n').map((line, lineIndex, array) => (
-                      <span key={lineIndex}>
+                      <React.Fragment key={lineIndex}>
                         {renderMarkdown(line.trim())}
                         {lineIndex < array.length - 1 && <br />}
-                      </span>
+                      </React.Fragment>
                     ))}
                   </p>
                 );
@@ -139,10 +140,10 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                 return (
                   <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
                     {trimmed.split('\n').map((line, lineIndex, array) => (
-                      <span key={lineIndex}>
+                      <React.Fragment key={lineIndex}>
                         {renderMarkdown(line.trim())}
                         {lineIndex < array.length - 1 && <br />}
-                      </span>
+                      </React.Fragment>
                     ))}
                   </p>
                 );
