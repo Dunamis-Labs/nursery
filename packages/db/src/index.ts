@@ -1,5 +1,15 @@
 export { PrismaClient } from '@prisma/client';
-export * from '@prisma/client';
+// Explicitly export Prisma types to avoid CommonJS/ESM issues with Turbopack
+export type {
+  Prisma,
+  Decimal,
+  JsonValue,
+  InputJsonValue,
+  JsonNullValueFilter,
+  JsonNullValueInput,
+  NestedJsonFilter,
+  NestedJsonNullableFilter,
+} from '@prisma/client';
 
 // Prisma types will be available after running: npm run db:generate
 // Types are generated from schema.prisma and exported from @prisma/client

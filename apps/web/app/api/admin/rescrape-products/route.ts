@@ -1,19 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@nursery/db';
 import { Prisma } from '@prisma/client';
+import { generateSlug } from '@nursery/data-import';
 
 // Force server-side only
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 600; // 10 minutes max
 
+/**
+ * Helper function to get the primary category (root category with no parent)
+ */
+async function getPrimaryCategory(categoryId: string | null): Promise<{ id: string; name: string } | null> {
+  if (!categoryId) return null;
+  
+  let currentCategory = await prisma.category.findUnique({
+    where: { id: categoryId },
+    select: { id: true, name: true, parentId: true },
+  });
+  
+  if (!currentCategory) return null;
+  
+  // Traverse up the tree until we find a category with no parent
+  while (currentCategory.parentId) {
+    const parent = await prisma.category.findUnique({
+      where: { id: currentCategory.parentId },
+      select: { id: true, name: true, parentId: true },
+    });
+    
+    if (!parent) break;
+    currentCategory = parent;
+  }
+  
+  return { id: currentCategory.id, name: currentCategory.name };
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { limit, missingImagesOnly } = await request.json().catch(() => ({}));
+    const { limit, missingImagesOnly, checkCategories } = await request.json().catch(() => ({}));
     const maxProducts = limit ? parseInt(limit) : 100;
     const onlyMissingImages = missingImagesOnly === true;
+    const shouldCheckCategories = checkCategories === true;
 
-    console.log(`🔧 Starting product rescrape (limit: ${maxProducts}, missingImagesOnly: ${onlyMissingImages})...`);
+    console.log(`🔧 Starting product rescrape (limit: ${maxProducts}, missingImagesOnly: ${onlyMissingImages}, checkCategories: ${shouldCheckCategories})...`);
 
     // Only import in development/local - skip during build
     if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
@@ -83,6 +112,13 @@ export async function POST(request: NextRequest) {
 
     // Get products to rescrape
     let products;
+    const baseSelect = {
+      id: true,
+      name: true,
+      slug: true,
+      sourceUrl: true,
+    };
+    
     if (onlyMissingImages) {
       // Get products with Plantmark URLs or no images
       products = await prisma.product.findMany({
@@ -102,12 +138,10 @@ export async function POST(request: NextRequest) {
           ],
         },
         select: {
-          id: true,
-          name: true,
-          slug: true,
-          sourceUrl: true,
+          ...baseSelect,
           imageUrl: true,
           images: true,
+          ...(shouldCheckCategories ? { categoryId: true } : {}),
         },
         take: maxProducts,
       });
@@ -118,16 +152,22 @@ export async function POST(request: NextRequest) {
           sourceUrl: { not: null },
         },
         select: {
-          id: true,
-          name: true,
-          slug: true,
-          sourceUrl: true,
+          ...baseSelect,
+          ...(shouldCheckCategories ? { categoryId: true } : {}),
         },
         take: maxProducts,
       });
     }
 
     console.log(`Found ${products.length} products to rescrape`);
+
+    // Initialize stats early
+    const stats = {
+      imagesAdded: 0,
+      descriptionsUpdated: 0,
+      attributesUpdated: 0,
+      categoriesFixed: 0,
+    };
 
     if (products.length === 0) {
       await scraper.close();
@@ -179,11 +219,6 @@ export async function POST(request: NextRequest) {
     let updated = 0;
     let skipped = 0;
     let errors = 0;
-    const stats = {
-      imagesAdded: 0,
-      descriptionsUpdated: 0,
-      attributesUpdated: 0,
-    };
 
     // Process products in batches
     const batchSize = 10;
@@ -221,6 +256,76 @@ export async function POST(request: NextRequest) {
           }
 
           console.log(`  ✅ Scraped: ${scrapedProduct.name || product.name} - Images: ${scrapedProduct.images?.length || 0}, Description: ${scrapedProduct.description ? 'Yes' : 'No'}`);
+
+          // Check category if requested
+          if (shouldCheckCategories && scrapedProduct.category) {
+            try {
+              // Get the product's current primary category
+              const productCategoryId = 'categoryId' in product ? (product.categoryId as string | null) : null;
+              const currentPrimaryCategory = await getPrimaryCategory(productCategoryId);
+              
+              // Find the scraped category using the same slug generation as DataImportService
+              const scrapedCategoryName = scrapedProduct.category;
+              const scrapedCategorySlug = generateSlug(scrapedCategoryName);
+              
+              // Find the category by slug first
+              let scrapedCategory = await prisma.category.findFirst({
+                where: { slug: scrapedCategorySlug },
+                select: { id: true, name: true, parentId: true },
+              });
+              
+              // If not found by slug, try to find by name (case-insensitive)
+              if (!scrapedCategory) {
+                const allCategories = await prisma.category.findMany({
+                  select: { id: true, name: true, parentId: true },
+                });
+                scrapedCategory = allCategories.find(
+                  cat => cat.name.toLowerCase() === scrapedCategoryName.toLowerCase()
+                ) || null;
+              }
+              
+              if (scrapedCategory) {
+                // Get the primary category for the scraped category
+                const scrapedPrimaryCategory = await getPrimaryCategory(scrapedCategory.id);
+                
+                // Compare primary categories
+                if (scrapedPrimaryCategory && currentPrimaryCategory) {
+                  if (scrapedPrimaryCategory.id !== currentPrimaryCategory.id) {
+                    console.log(`  🔄 Category mismatch detected:`);
+                    console.log(`     Current: ${currentPrimaryCategory.name} (${currentPrimaryCategory.id})`);
+                    console.log(`     Scraped: ${scrapedPrimaryCategory.name} (${scrapedPrimaryCategory.id})`);
+                    
+                    // Update product to use the correct primary category
+                    await prisma.product.update({
+                      where: { id: product.id },
+                      data: { categoryId: scrapedPrimaryCategory.id },
+                    });
+                    
+                    stats.categoriesFixed++;
+                    console.log(`  ✅ Updated product category to: ${scrapedPrimaryCategory.name}`);
+                  } else {
+                    console.log(`  ✓ Category is correct: ${currentPrimaryCategory.name}`);
+                  }
+                } else if (scrapedPrimaryCategory && !currentPrimaryCategory) {
+                  // Product has no category, assign the scraped primary category
+                  await prisma.product.update({
+                    where: { id: product.id },
+                    data: { categoryId: scrapedPrimaryCategory.id },
+                  });
+                  
+                  stats.categoriesFixed++;
+                  console.log(`  ✅ Assigned category: ${scrapedPrimaryCategory.name}`);
+                } else if (!scrapedPrimaryCategory) {
+                  console.log(`  ⚠️  Could not determine primary category for "${scrapedCategoryName}"`);
+                }
+              } else {
+                console.log(`  ⚠️  Could not find category "${scrapedCategoryName}" in database`);
+              }
+            } catch (categoryError) {
+              console.error(`  ⚠️  Error checking category for ${product.name}:`, categoryError instanceof Error ? categoryError.message : String(categoryError));
+              // Continue processing even if category check fails
+            }
+          }
 
           // Import/update product with new data
           let result;

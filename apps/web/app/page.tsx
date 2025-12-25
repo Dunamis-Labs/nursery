@@ -8,49 +8,63 @@ import { MAIN_CATEGORIES } from '@/lib/constants/categories';
 
 export default async function HomePage() {
   // Fetch only the 15 main categories
-  const categories = await prisma.category.findMany({
-    where: {
-      name: { in: MAIN_CATEGORIES },
-      parentId: null,
-    },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      _count: {
-        select: { products: true },
+  let categories = [];
+  try {
+    categories = await prisma.category.findMany({
+      where: {
+        name: { in: MAIN_CATEGORIES },
+        parentId: null,
       },
-    },
-    orderBy: {
-      name: 'asc',
-    },
-  });
-
-  // Fetch featured products (in stock, recently added)
-  const featuredProductsRaw = await prisma.product.findMany({
-    take: 8,
-    where: {
-      availability: 'IN_STOCK',
-    },
-    include: {
-      category: {
-        select: {
-          name: true,
-          slug: true,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        _count: {
+          select: { products: true },
         },
       },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
+      orderBy: {
+        name: 'asc',
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    // Continue with empty array if database fails
+    categories = [];
+  }
 
-  // Convert Decimal to number for client components
-  const featuredProducts = featuredProductsRaw.map(product => ({
-    ...product,
-    price: product.price ? Number(product.price) : null,
-  }));
+  // Fetch featured products (in stock, recently added)
+  let featuredProducts = [];
+  try {
+    const featuredProductsRaw = await prisma.product.findMany({
+      take: 8,
+      where: {
+        availability: 'IN_STOCK',
+      },
+      include: {
+        category: {
+          select: {
+            name: true,
+            slug: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // Convert Decimal to number for client components
+    featuredProducts = featuredProductsRaw.map(product => ({
+      ...product,
+      price: product.price ? Number(product.price) : null,
+    }));
+  } catch (error) {
+    console.error('Error fetching featured products:', error);
+    // Continue with empty array if database fails
+    featuredProducts = [];
+  }
 
   return (
     <div className="min-h-screen">

@@ -31,27 +31,12 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // #region agent log
-  console.error('[DEBUG] layout.tsx RootLayout rendering', JSON.stringify({childrenType:typeof children}));
-  // #endregion
-
-  try {
-    return (
-      <html lang="en">
-        <body className="font-sans antialiased">
-          {children}
-        </body>
-      </html>
-    );
-  } catch (error: any) {
-    console.error('[DEBUG] layout.tsx ERROR', JSON.stringify({error:error?.message}));
-    return (
-      <html lang="en">
-        <body>
-          <div>Layout Error: {String(error?.message || 'Unknown error')}</div>
-        </body>
-      </html>
-    );
-  }
+  return (
+    <html lang="en">
+      <body className="font-sans antialiased">
+        {children}
+      </body>
+    </html>
+  );
 }
 

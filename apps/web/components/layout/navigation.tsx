@@ -101,7 +101,7 @@ export function Navigation({ categories = [] }: NavigationProps) {
                 <Menu className="h-6 w-6 text-[#2c2c2c]" />
               </button>
               <Link href="/" className="flex items-center gap-2">
-                <Image src="/logo.svg" alt="The Plant Nursery" width={120} height={40} className="h-10 w-auto" />
+                <img src="/logo.svg" alt="The Plant Nursery" className="h-10 w-auto" />
               </Link>
             </div>
             <div className="hidden lg:flex items-center gap-6">
@@ -147,7 +147,7 @@ export function Navigation({ categories = [] }: NavigationProps) {
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                 <div className="flex flex-col gap-4 mt-4 pb-6">
                   <Link href="/" className="flex items-center gap-2 px-4 mb-1" onClick={() => setOpen(false)}>
-                    <Image src="/logo.svg" alt="The Plant Nursery" width={40} height={40} className="h-10 w-auto" />
+                    <Image src="/logo.svg" alt="The Plant Nursery" width={40} height={40} className="h-10" style={{ width: 'auto' }} />
                     <span className="font-serif text-2xl font-bold text-[#2d5016]">The Plant Nursery</span>
                   </Link>
 
@@ -244,7 +244,7 @@ export function Navigation({ categories = [] }: NavigationProps) {
             </Sheet>
 
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <Image src="/logo.svg" alt="The Plant Nursery" width={36} height={36} className="h-9 w-auto" />
+              <img src="/logo.svg" alt="The Plant Nursery" className="h-9 w-auto" />
               <span className="font-serif text-2xl font-bold text-[#2d5016]">The Plant Nursery</span>
             </Link>
 
