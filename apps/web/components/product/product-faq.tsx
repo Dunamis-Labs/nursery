@@ -60,16 +60,13 @@ export function ProductFAQ({ faqs }: ProductFAQProps) {
             <AccordionContent className="text-muted-foreground leading-relaxed">
               {(() => {
                 // Render markdown bold (**text**) as <strong>
-                const renderMarkdown = (text: string) => {
-                  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-                  return parts.map((part, i) => {
-                    if (part.startsWith('**') && part.endsWith('**')) {
-                      return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
-                    }
-                    return <span key={i}>{part}</span>;
-                  });
-                };
-                return renderMarkdown(faq.answer);
+                const parts = faq.answer.split(/(\*\*[^*]+\*\*)/g);
+                return parts.map((part, i) => {
+                  if (part.startsWith('**') && part.endsWith('**')) {
+                    return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                  }
+                  return <span key={i}>{part}</span>;
+                });
               })()}
             </AccordionContent>
           </AccordionItem>
