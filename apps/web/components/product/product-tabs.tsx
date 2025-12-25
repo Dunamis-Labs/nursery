@@ -52,9 +52,8 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                 
                 return (
                   <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
-                    {trimmed.split('\n').map((line, lineIndex, array) => {
+                    {trimmed.split('\n').filter(line => line.trim().length > 0).map((line, lineIndex, array) => {
                       const lineText = line.trim();
-                      if (!lineText) return null;
                       
                       // Parse markdown bold manually
                       const elements: React.ReactNode[] = [];
@@ -171,9 +170,8 @@ export function ProductTabs({ description, specifications, careInstructions }: P
                 // Regular paragraph - render markdown bold
                 return (
                   <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
-                    {trimmed.split('\n').map((line, lineIndex, array) => {
+                    {trimmed.split('\n').filter(line => line.trim().length > 0).map((line, lineIndex, array) => {
                       const lineText = line.trim();
-                      if (!lineText) return null;
                       
                       // Parse markdown bold manually
                       const elements: React.ReactNode[] = [];
