@@ -25,6 +25,9 @@ const nextConfig = {
     }
     return config;
   },
+  // Explicitly disable Turbopack since we're using webpack config
+  // This prevents the build error about webpack config with Turbopack
+  turbopack: undefined,
   images: {
     remotePatterns: [
       {
