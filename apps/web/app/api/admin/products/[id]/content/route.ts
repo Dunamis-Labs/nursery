@@ -12,15 +12,17 @@ const contentSchema = z.object({
 });
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 async function handlerWithParams(
   request: NextRequest,
   { params }: RouteParams
 ) {
+  const { id } = await params;
+  
   if (request.method === 'POST') {
     try {
       const body = await request.json();
@@ -29,7 +31,7 @@ async function handlerWithParams(
       // Find product by ID or slug
       const product = await prisma.product.findFirst({
         where: {
-          OR: [{ id: params.id }, { slug: params.id }],
+          OR: [{ id }, { slug: id }],
         },
       });
 
@@ -75,7 +77,7 @@ async function handlerWithParams(
     try {
       const product = await prisma.product.findFirst({
         where: {
-          OR: [{ id: params.id }, { slug: params.id }],
+          OR: [{ id }, { slug: id }],
         },
         include: {
           content: true,

@@ -1,22 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@nursery/db';
+import { MAIN_CATEGORIES } from '@/lib/constants/categories';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const parentId = searchParams.get('parentId');
-
-    const where: any = {};
-    if (parentId) {
-      where.parentId = parentId;
-    } else {
-      where.parentId = null; // Top-level categories only
-    }
-
+    // Only return the 15 main categories - no subcategories
     const categories = await prisma.category.findMany({
-      where,
-      include: {
-        children: true,
+      where: {
+        name: { in: MAIN_CATEGORIES },
+        parentId: null, // Only top-level categories
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        image: true,
         _count: {
           select: { products: true },
         },
@@ -26,7 +25,17 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(categories);
+    // Deduplicate by name (keep first occurrence)
+    const seen = new Set<string>();
+    const uniqueCategories = categories.filter(cat => {
+      if (seen.has(cat.name)) {
+        return false;
+      }
+      seen.add(cat.name);
+      return true;
+    });
+
+    return NextResponse.json(uniqueCategories);
   } catch (error) {
     console.error('Error fetching categories:', error);
     return NextResponse.json(

@@ -4,18 +4,24 @@ import { HeroSection } from '@/components/layout/hero-section';
 import { CategoryGrid } from '@/components/category/category-grid';
 import { FeaturedProducts } from '@/components/product/featured-products';
 import { Footer } from '@/components/layout/footer';
+import { MAIN_CATEGORIES } from '@/lib/constants/categories';
 
 // Import other components if they exist, or create placeholder versions
 // import { ShopByPurpose } from '@/components/shop-by-purpose';
 // import { LatestGuides } from '@/components/latest-guides';
 
 export default async function HomePage() {
-  // Fetch categories with product counts (exclude Uncategorized)
+  // Fetch only the 15 main categories
   const categories = await prisma.category.findMany({
     where: {
-      name: { not: 'Uncategorized' },
+      name: { in: MAIN_CATEGORIES },
+      parentId: null,
     },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
       _count: {
         select: { products: true },
       },
@@ -23,11 +29,10 @@ export default async function HomePage() {
     orderBy: {
       name: 'asc',
     },
-    take: 8,
   });
 
   // Fetch featured products (in stock, recently added)
-  const featuredProducts = await prisma.product.findMany({
+  const featuredProductsRaw = await prisma.product.findMany({
     take: 8,
     where: {
       availability: 'IN_STOCK',
@@ -44,6 +49,12 @@ export default async function HomePage() {
       createdAt: 'desc',
     },
   });
+
+  // Convert Decimal to number for client components
+  const featuredProducts = featuredProductsRaw.map(product => ({
+    ...product,
+    price: product.price ? Number(product.price) : null,
+  }));
 
   return (
     <div className="min-h-screen">

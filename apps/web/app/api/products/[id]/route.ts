@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@nursery/db';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function GET(
@@ -12,10 +12,11 @@ export async function GET(
   { params }: RouteParams
 ) {
   try {
+    const { id } = await params;
     // Try to find by ID first, then by slug
     const product = await prisma.product.findFirst({
       where: {
-        OR: [{ id: params.id }, { slug: params.id }],
+        OR: [{ id }, { slug: id }],
       },
       include: {
         category: true,

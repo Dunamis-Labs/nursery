@@ -25,9 +25,10 @@ if (databaseUrl.includes('pooler.supabase.com') && process.env.NODE_ENV === 'dev
   console.warn('⚠️  Using pooler connection. For scripts, use DATABASE_URL_NON_POOLING with direct connection.');
 }
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
+// Create Prisma client - in development, create fresh instance each time
+// This prevents Next.js from caching stale data
+const createPrismaClient = () => {
+  return new PrismaClient({
     datasources: {
       db: {
         url: databaseUrl,
@@ -35,6 +36,17 @@ export const prisma =
     },
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
+};
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+// In development: create fresh client (no caching)
+// In production: use singleton for performance
+export const prisma =
+  process.env.NODE_ENV === 'development'
+    ? createPrismaClient()
+    : (globalForPrisma.prisma ?? createPrismaClient());
+
+// Only cache in production
+if (process.env.NODE_ENV === 'production' && !globalForPrisma.prisma) {
+  globalForPrisma.prisma = prisma;
+}
 

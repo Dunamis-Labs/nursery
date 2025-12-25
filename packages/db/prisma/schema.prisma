@@ -80,6 +80,7 @@ model Product {
   images          Json?             // Array of image URLs
   metadata        Json?             // Type-specific metadata
   content         ProductContent?
+  specification   ProductSpecification?
   faqs            FAQ[]
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -95,6 +96,7 @@ model Category {
   name        String
   slug        String     @unique
   description String?    @db.Text
+  image       String?    @db.VarChar(500)
   parentId    String?
   parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryTree")
@@ -116,6 +118,8 @@ model ProductContent {
   careInstructions  String? @db.Text
   uses              String? @db.Text
   benefits          String? @db.Text
+  idealFor          String[] @default([]) // Array of strings for "ideal for" items
+  notIdealFor       String[] @default([]) // Array of strings for "not ideal for" items
   lastUpdatedAt     DateTime @default(now()) @updatedAt
 }
 
@@ -232,6 +236,29 @@ model Experiment {
 
   @@index([status])
   @@index([statsigId])
+}
+
+model ProductSpecification {
+  id              String   @id @default(uuid())
+  productId       String   @unique
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  lightRequirements String? // e.g., "Bright indirect light", "Full sun", "Partial shade"
+  humidity        String? // e.g., "High", "Moderate", "Low"
+  growthRate      String? // e.g., "Fast", "Moderate", "Slow"
+  toxicity        String? // e.g., "Toxic to pets", "Non-toxic", "Mildly toxic"
+  watering        String? // e.g., "Weekly", "When soil is dry", "Keep moist"
+  temperature     String? // e.g., "18-24°C", "Warm", "Cool"
+  difficulty      String? // e.g., "Easy", "Moderate", "Difficult"
+  origin          String? // e.g., "Tropical Asia", "South America", "Australia"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([productId])
+  @@index([lightRequirements])
+  @@index([humidity])
+  @@index([growthRate])
+  @@index([toxicity])
+  @@index([difficulty])
 }
 
 model ScrapingJob {

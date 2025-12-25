@@ -8,8 +8,28 @@ function scrapeProductDetail() {
   // Look for price in various locations
   const priceEl = document.querySelector('.price, [data-price], .product-price, [class*="price"]');
   
-  // Find all images (main and gallery)
-  const imageEls = document.querySelectorAll('.product-images img, .product-gallery img, [data-image], .photo img, img[src*="thumbs"], .product-image img');
+  // Find all images (main and gallery) - comprehensive selector
+  // Try multiple selectors to catch all possible image locations
+  const imageEls = document.querySelectorAll(`
+    .product-images img, 
+    .product-gallery img, 
+    [data-image], 
+    .photo img, 
+    img[src*="thumbs"], 
+    .product-image img, 
+    .gallery img, 
+    [class*="image"] img, 
+    [class*="photo"] img, 
+    [class*="picture"] img,
+    .product-detail img,
+    .product-info img,
+    .main-image img,
+    .product-photo img,
+    img[src*="plantmark.com.au"],
+    img[src*="/images/"],
+    img[src*="/product"],
+    img:not([src*="logo"]):not([src*="banner"]):not([src*="placeholder"])
+  `.replace(/\s+/g, ' ').trim());
   
   // Extract structured product attributes from itemprop attributes (most reliable)
   let botanicalName = null;
@@ -128,32 +148,133 @@ function scrapeProductDetail() {
   // Extract all images from gallery (full quality - remove size suffixes like _400, _750)
   const images = [];
   const seenImages = new Set();
+  
   // Look for gallery images specifically (cloudzoom-gallery, product-gallery, etc.)
-  const galleryImages = document.querySelectorAll('.cloudzoom-gallery img, .product-gallery img, .cloudzoom img, .picture-img, img[class*="gallery"], img[class*="cloudzoom"]');
+  // Expanded selectors to catch all gallery/image carousel implementations
+  const galleryImages = document.querySelectorAll(`
+    .cloudzoom-gallery img, 
+    .product-gallery img, 
+    .cloudzoom img, 
+    .picture-img, 
+    img[class*="gallery"], 
+    img[class*="cloudzoom"], 
+    [class*="gallery"] img, 
+    [class*="slider"] img, 
+    [class*="carousel"] img,
+    [class*="swiper"] img,
+    [class*="slick"] img,
+    .image-gallery img,
+    .product-slider img,
+    .main-gallery img
+  `.replace(/\s+/g, ' ').trim());
+  
+  // Also check for data attributes that might contain image URLs
+  const dataImageElements = document.querySelectorAll('[data-image-url], [data-full-image], [data-zoom-image], [data-large-image]');
+  
+  // Combine all image sources
   const allProductImages = galleryImages.length > 0 ? galleryImages : imageEls;
   
-  for (let i = 0; i < allProductImages.length; i++) {
-    const img = allProductImages[i];
-    let src = img.getAttribute('src') || img.getAttribute('data-src') || img.getAttribute('data-lazy-src') || img.getAttribute('data-lazyloadsrc') || '';
-    // Skip placeholder images, logos, banners
-    if (src.includes('data:image') || src.includes('placeholder') || src.includes('blank') || 
-        src.includes('logo') || src.includes('banner') || src.includes('web thin banner')) continue;
+  // Function to normalize and get full quality image URL
+  function getFullQualityImageUrl(src) {
+    if (!src || src.includes('data:image')) return null;
+    
     // Make relative URLs absolute
-    if (src && !src.startsWith('http')) {
+    if (!src.startsWith('http')) {
       if (src.startsWith('/')) {
         src = 'https://www.plantmark.com.au' + src;
       } else {
         src = 'https://www.plantmark.com.au/' + src;
       }
     }
-    // Remove size suffix to get full quality image (_400, _750, etc.)
-    if (src && src.length > 0 && !src.includes('data:image')) {
-      // Remove size suffixes like _400, _750 to get original quality
-      const fullQualitySrc = src.replace(/_[0-9]+\.(jpg|jpeg|png|gif)$/i, '.$1');
-      // Use normalized URL for deduplication, but store full quality URL
-      if (!seenImages.has(fullQualitySrc)) {
+    
+    // Remove size suffixes like _400, _750, _150 to get original quality
+    // Also handle webp extensions
+    const fullQualitySrc = src.replace(/_[0-9]+\.(jpg|jpeg|png|gif|webp)$/i, '.$1');
+    
+    return fullQualitySrc;
+  }
+  
+  // Process regular image elements
+  for (let i = 0; i < allProductImages.length; i++) {
+    const img = allProductImages[i];
+    let src = img.getAttribute('src') || img.getAttribute('data-src') || img.getAttribute('data-lazy-src') || img.getAttribute('data-lazyloadsrc') || img.getAttribute('data-original') || '';
+    
+    // Skip placeholder images, logos, banners
+    if (src.includes('data:image') || src.includes('placeholder') || src.includes('blank') || 
+        src.includes('logo') || src.includes('banner') || src.includes('web thin banner')) continue;
+    
+    const fullQualitySrc = getFullQualityImageUrl(src);
+    if (fullQualitySrc && !seenImages.has(fullQualitySrc)) {
         seenImages.add(fullQualitySrc);
         images.push(fullQualitySrc);
+    }
+  }
+  
+  // Process data attribute image URLs
+  for (let i = 0; i < dataImageElements.length; i++) {
+    const el = dataImageElements[i];
+    const dataSrc = el.getAttribute('data-image-url') || el.getAttribute('data-full-image') || 
+                    el.getAttribute('data-zoom-image') || el.getAttribute('data-large-image') || '';
+    
+    if (dataSrc) {
+      const fullQualitySrc = getFullQualityImageUrl(dataSrc);
+      if (fullQualitySrc && !seenImages.has(fullQualitySrc)) {
+        seenImages.add(fullQualitySrc);
+        images.push(fullQualitySrc);
+      }
+    }
+  }
+  
+  // Also check for any img tags in the main product area that we might have missed
+  let mainContent = document.querySelector('.product-detail, .product-info, .product-content, main, [class*="product"]');
+  if (mainContent) {
+    const additionalImages = mainContent.querySelectorAll('img[src*="plantmark.com.au"], img[src*="/images/"], img[src*="/product"]');
+    for (let i = 0; i < additionalImages.length; i++) {
+      const img = additionalImages[i];
+      let src = img.getAttribute('src') || img.getAttribute('data-src') || '';
+      
+      if (src && !src.includes('placeholder') && !src.includes('logo') && !src.includes('banner')) {
+        const fullQualitySrc = getFullQualityImageUrl(src);
+        if (fullQualitySrc && !seenImages.has(fullQualitySrc)) {
+          seenImages.add(fullQualitySrc);
+          images.push(fullQualitySrc);
+        }
+      }
+    }
+  }
+  
+  // Final fallback: if we still have no images, look for ANY img tag on the page that might be a product image
+  // This is a last resort to catch images that don't match our selectors
+  if (images.length === 0) {
+    const allImages = document.querySelectorAll('img');
+    for (let i = 0; i < allImages.length; i++) {
+      const img = allImages[i];
+      let src = img.getAttribute('src') || img.getAttribute('data-src') || img.getAttribute('data-lazy-src') || '';
+      
+      // Skip if it's clearly not a product image
+      if (!src || 
+          src.includes('data:image') || 
+          src.includes('placeholder') || 
+          src.includes('blank') || 
+          src.includes('logo') || 
+          src.includes('banner') ||
+          src.includes('icon') ||
+          src.includes('sprite')) {
+        continue;
+      }
+      
+      // Only consider images that look like product images (from plantmark or have product-like paths)
+      if (src.includes('plantmark.com.au') || 
+          src.includes('/images/') || 
+          src.includes('/product') ||
+          (src.includes('.jpg') || src.includes('.jpeg') || src.includes('.png'))) {
+        const fullQualitySrc = getFullQualityImageUrl(src);
+        if (fullQualitySrc && !seenImages.has(fullQualitySrc)) {
+          seenImages.add(fullQualitySrc);
+          images.push(fullQualitySrc);
+          // Stop after finding a few potential product images
+          if (images.length >= 5) break;
+        }
       }
     }
   }
@@ -356,7 +477,16 @@ function scrapeProductDetail() {
   }
 
   // Identify the main product content area (exclude header, footer, sidebar)
-  const mainContent = document.querySelector('.product-detail, .product-info, main, .main-content, [role="main"]') || document.body;
+  // Update mainContent if not already set or use better selector
+  if (!mainContent) {
+    mainContent = document.querySelector('.product-detail, .product-info, main, .main-content, [role="main"]') || document.body;
+  } else {
+    // Try to get a better match with more comprehensive selector
+    const betterMainContent = document.querySelector('.product-detail, .product-info, main, .main-content, [role="main"]') || document.body;
+    if (betterMainContent && betterMainContent !== document.body) {
+      mainContent = betterMainContent;
+    }
+  }
   
   // Helper to check if element is in main content (not footer/header)
   function isInMainContent(el) {

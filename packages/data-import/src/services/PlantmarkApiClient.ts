@@ -28,6 +28,8 @@ export class PlantmarkApiClient {
       useProxy: config.useProxy || false,
       proxyUrl: config.proxyUrl || '',
       rateLimitMs: config.rateLimitMs || 2000, // Default: 1 request per 2 seconds
+      email: config.email || '',
+      password: config.password || '',
     };
 
     // Try to load discovered endpoints from discovery script

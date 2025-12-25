@@ -3,94 +3,212 @@ import { prisma } from '@nursery/db';
 
 /**
  * API endpoint to fix category assignments for products
- * Extracts categories directly from Plantmark URLs (no inference)
+ * Maps products to the 15 main Plantmark categories based on URL structure
  * Note: This endpoint is accessible from the admin dashboard without API key
  */
-export async function POST(request: NextRequest) {
-  // Allow access from admin dashboard (no API key required for this endpoint)
+
+// The 15 main Plantmark categories
+const PLANTMARK_CATEGORIES = [
+  'Trees',
+  'Shrubs',
+  'Grasses',
+  'Hedging and Screening',
+  'Groundcovers',
+  'Climbers',
+  'Palms, Ferns & Tropical',
+  'Conifers',
+  'Roses',
+  'Succulents & Cacti',
+  'Citrus & Fruit',
+  'Herbs & Vegetables',
+  'Water Plants',
+  'Indoor Plants',
+  'Garden Products',
+] as const;
+
+/**
+ * Map Plantmark URL paths to the 15 main categories
+ * Plantmark URLs are like: /trees/product-name, /shrubs/product-name, etc.
+ */
+function mapUrlToCategory(urlPath: string): string | null {
+  if (!urlPath) return null;
+  
+  // Normalize the path - remove leading/trailing slashes and split
+  const pathParts = urlPath.toLowerCase().split('/').filter(p => p && p !== 'plant-finder');
+  
+  if (pathParts.length === 0) return null;
+  
+  const firstPart = pathParts[0].toLowerCase();
+  
+  // Direct mapping from URL slugs to categories
+  const urlToCategoryMap: Record<string, string> = {
+    // Trees
+    'trees': 'Trees',
+    'tree': 'Trees',
+    
+    // Shrubs
+    'shrubs': 'Shrubs',
+    'shrub': 'Shrubs',
+    
+    // Grasses
+    'grasses': 'Grasses',
+    'grass': 'Grasses',
+    'ornamental-grasses': 'Grasses',
+    
+    // Hedging and Screening
+    'hedging': 'Hedging and Screening',
+    'hedge': 'Hedging and Screening',
+    'screening': 'Hedging and Screening',
+    'hedging-and-screening': 'Hedging and Screening',
+    
+    // Groundcovers
+    'groundcovers': 'Groundcovers',
+    'groundcover': 'Groundcovers',
+    'ground-covers': 'Groundcovers',
+    'ground-cover': 'Groundcovers',
+    
+    // Climbers
+    'climbers': 'Climbers',
+    'climber': 'Climbers',
+    'vines': 'Climbers',
+    'vine': 'Climbers',
+    
+    // Palms, Ferns & Tropical
+    'palms': 'Palms, Ferns & Tropical',
+    'palm': 'Palms, Ferns & Tropical',
+    'ferns': 'Palms, Ferns & Tropical',
+    'fern': 'Palms, Ferns & Tropical',
+    'tropical': 'Palms, Ferns & Tropical',
+    'palms-ferns-tropical': 'Palms, Ferns & Tropical',
+    
+    // Conifers
+    'conifers': 'Conifers',
+    'conifer': 'Conifers',
+    
+    // Roses
+    'roses': 'Roses',
+    'rose': 'Roses',
+    
+    // Succulents & Cacti
+    'succulents': 'Succulents & Cacti',
+    'succulent': 'Succulents & Cacti',
+    'cacti': 'Succulents & Cacti',
+    'cactus': 'Succulents & Cacti',
+    'succulents-cacti': 'Succulents & Cacti',
+    
+    // Citrus & Fruit
+    'citrus': 'Citrus & Fruit',
+    'fruit': 'Citrus & Fruit',
+    'fruit-trees': 'Citrus & Fruit',
+    'citrus-fruit': 'Citrus & Fruit',
+    
+    // Herbs & Vegetables
+    'herbs': 'Herbs & Vegetables',
+    'herb': 'Herbs & Vegetables',
+    'vegetables': 'Herbs & Vegetables',
+    'vegetable': 'Herbs & Vegetables',
+    'herbs-vegetables': 'Herbs & Vegetables',
+    
+    // Water Plants
+    'water-plants': 'Water Plants',
+    'water-plant': 'Water Plants',
+    'aquatic': 'Water Plants',
+    'pond-plants': 'Water Plants',
+    
+    // Indoor Plants
+    'indoor-plants': 'Indoor Plants',
+    'indoor': 'Indoor Plants',
+    'houseplants': 'Indoor Plants',
+    'house-plants': 'Indoor Plants',
+    
+    // Garden Products
+    'garden-products': 'Garden Products',
+    'products': 'Garden Products',
+    'accessories': 'Garden Products',
+    'tools': 'Garden Products',
+    'fertilisers': 'Garden Products',
+    'fertilizers': 'Garden Products',
+  };
+  
+  // Check direct mapping
+  if (urlToCategoryMap[firstPart]) {
+    return urlToCategoryMap[firstPart];
+  }
+  
+  // If no direct match, try to infer from common patterns
+  // But only if it's clearly a category path, not a product name
+  // Product URLs are usually like /trees/acer-freemanii-rubrum-autumn-blaze
+  // So if firstPart is a known category word, use it
+  
+  return null; // Don't guess - only use explicit mappings
+}
+
+/**
+ * Extract category from Plantmark sourceUrl
+ */
+function extractCategoryFromUrl(sourceUrl: string | null): string | null {
+  if (!sourceUrl) return null;
+  
   try {
-    console.log('🌱 Starting category fix via API (extracting from Plantmark URLs)...');
+    const url = new URL(sourceUrl);
+    return mapUrlToCategory(url.pathname);
+  } catch (error) {
+    console.error(`Error parsing URL ${sourceUrl}:`, error);
+    return null;
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    console.log('🌱 Starting category fix - mapping to 15 main Plantmark categories...');
+
+    // First, ensure the 15 main categories exist
+    const categoryMap = new Map<string, string>();
+    for (const categoryName of PLANTMARK_CATEGORIES) {
+      let category = await prisma.category.findFirst({
+        where: { name: categoryName },
+      });
+      
+      if (!category) {
+        category = await prisma.category.create({
+          data: {
+            name: categoryName,
+            slug: categoryName.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and'),
+            description: `${categoryName} from Plantmark`,
+          },
+        });
+        console.log(`✅ Created category: ${categoryName}`);
+      }
+      
+      categoryMap.set(categoryName.toLowerCase(), category.id);
+    }
 
     // Get all products with sourceUrl
     const products = await prisma.product.findMany({
       where: {
         sourceUrl: { not: null },
       },
-      include: {
-        category: true,
+      select: {
+        id: true,
+        sourceUrl: true,
+        categoryId: true,
       },
     });
 
     console.log(`Found ${products.length} products to process`);
 
-    // Get or create categories
-    const categoryMap = new Map<string, string>();
-    const categories = await prisma.category.findMany();
-    categories.forEach((cat) => {
-      categoryMap.set(cat.name.toLowerCase(), cat.id);
-    });
-
-    /**
-     * Extract category from Plantmark URL
-     * Categories are in the URL path like: /trees/product-name or /shrubs/product-name
-     */
-    function extractCategoryFromUrl(sourceUrl: string | null): string | null {
-      if (!sourceUrl) return null;
-      
-      try {
-        const url = new URL(sourceUrl);
-        const pathParts = url.pathname.split('/').filter(p => p && p !== 'plant-finder');
-        
-        if (pathParts.length > 0) {
-          const categorySlug = pathParts[0].toLowerCase();
-          
-          // Map common slugs to category names (matching Plantmark's structure)
-          const categoryNameMap: Record<string, string> = {
-            'trees': 'Trees',
-            'shrubs': 'Shrubs',
-            'perennials': 'Perennials',
-            'annuals': 'Annuals',
-            'succulents': 'Succulents',
-            'palms': 'Palms',
-            'grasses': 'Grasses',
-            'ferns': 'Ferns',
-            'climbers': 'Climbers',
-            'groundcovers': 'Groundcovers',
-            'ground-covers': 'Groundcovers',
-            'indoor-plants': 'Indoor Plants',
-            'indoor': 'Indoor Plants',
-            'houseplants': 'Indoor Plants',
-            'roses': 'Roses',
-          };
-          
-          if (categoryNameMap[categorySlug]) {
-            return categoryNameMap[categorySlug];
-          }
-          
-          // Convert slug to readable name (e.g., "trees" -> "Trees", "indoor-plants" -> "Indoor Plants")
-          return categorySlug.split('-').map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1)
-          ).join(' ');
-        }
-      } catch (error) {
-        console.error(`Error parsing URL ${sourceUrl}:`, error);
-      }
-      
-      return null;
-    }
-
     // Process products in batches
     const batchSize = 50;
     let updated = 0;
-    let created = 0;
     let skipped = 0;
+    const categoryCounts = new Map<string, number>();
 
     for (let i = 0; i < products.length; i += batchSize) {
       const batch = products.slice(i, i + batchSize);
 
       for (const product of batch) {
         try {
-          // Extract category from URL only (no inference)
+          // Extract category from URL
           const categoryName = extractCategoryFromUrl(product.sourceUrl);
 
           if (!categoryName) {
@@ -98,19 +216,12 @@ export async function POST(request: NextRequest) {
             continue;
           }
 
-          // Get or create category
-          let categoryId = categoryMap.get(categoryName.toLowerCase());
+          // Get category ID
+          const categoryId = categoryMap.get(categoryName.toLowerCase());
           if (!categoryId) {
-            const category = await prisma.category.create({
-              data: {
-                name: categoryName,
-                slug: categoryName.toLowerCase().replace(/\s+/g, '-'),
-                description: `${categoryName} plants`,
-              },
-            });
-            categoryId = category.id;
-            categoryMap.set(categoryName.toLowerCase(), categoryId);
-            created++;
+            console.warn(`Category not found: ${categoryName}`);
+            skipped++;
+            continue;
           }
 
           // Update product if category changed or if product has no category
@@ -120,6 +231,7 @@ export async function POST(request: NextRequest) {
               data: { categoryId },
             });
             updated++;
+            categoryCounts.set(categoryName, (categoryCounts.get(categoryName) || 0) + 1);
           }
         } catch (error) {
           console.error(`Error processing product ${product.id}:`, error);
@@ -127,8 +239,51 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Get category breakdown
+    // Delete all categories that are NOT in the 15 main categories
+    const allCategories = await prisma.category.findMany();
+    const mainCategoryIds = Array.from(categoryMap.values());
+    const categoriesToDelete = allCategories.filter(cat => !mainCategoryIds.includes(cat.id));
+    
+    let deleted = 0;
+    for (const category of categoriesToDelete) {
+      try {
+        // First, move products from deleted categories to "Uncategorized" or first main category
+        const uncategorizedCategory = await prisma.category.findFirst({
+          where: { name: 'Uncategorized' },
+        }) || await prisma.category.findFirst({
+          where: { name: PLANTMARK_CATEGORIES[0] },
+        });
+        
+        if (uncategorizedCategory) {
+          await prisma.product.updateMany({
+            where: { categoryId: category.id },
+            data: { categoryId: uncategorizedCategory.id },
+          });
+        }
+        
+        // Check if category still exists before deleting
+        const categoryExists = await prisma.category.findUnique({
+          where: { id: category.id },
+        });
+        
+        if (categoryExists) {
+          await prisma.category.delete({
+            where: { id: category.id },
+          });
+          deleted++;
+          console.log(`🗑️  Deleted incorrect category: ${category.name}`);
+        }
+      } catch (error) {
+        console.error(`Error deleting category ${category.name}:`, error);
+        // Continue with next category
+      }
+    }
+
+    // Get final category breakdown
     const categoryBreakdown = await prisma.category.findMany({
+      where: {
+        name: { in: [...PLANTMARK_CATEGORIES] },
+      },
       include: {
         _count: {
           select: { products: true },
@@ -154,18 +309,17 @@ export async function POST(request: NextRequest) {
       summary: {
         totalProducts: products.length,
         updated,
-        created,
         skipped,
+        deletedCategories: deleted,
         uncategorized: uncategorizedCategory?._count.products || 0,
       },
-      categories: categoryBreakdown
-        .filter((cat) => cat.name !== 'Uncategorized')
-        .map((cat) => ({
-          id: cat.id,
-          name: cat.name,
-          slug: cat.slug,
-          productCount: cat._count.products,
-        })),
+      categories: categoryBreakdown.map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+        productCount: cat._count.products,
+      })),
+      categoryCounts: Object.fromEntries(categoryCounts),
     });
   } catch (error) {
     console.error('Error fixing categories:', error);

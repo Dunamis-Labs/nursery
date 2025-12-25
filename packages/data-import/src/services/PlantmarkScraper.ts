@@ -809,6 +809,8 @@ export class PlantmarkScraper {
 
       // Extract product details - improved for Plantmark's actual structure
       // Load the scraping code from a separate JS file to avoid TypeScript compilation issues
+      let scrapeCode: string;
+      try {
       const fs = await import('fs');
       const path = await import('path');
       const { fileURLToPath } = await import('url');
@@ -817,7 +819,39 @@ export class PlantmarkScraper {
       const __dirname = dirname(__filename);
       
       const scrapeCodePath = path.join(__dirname, 'scrapeProductDetailCode.js');
-      const scrapeCode = fs.readFileSync(scrapeCodePath, 'utf-8');
+        scrapeCode = fs.readFileSync(scrapeCodePath, 'utf-8');
+      } catch (fileError) {
+        // Fallback: try to read from package directory
+        try {
+          const fs = await import('fs');
+          const path = await import('path');
+          // Try multiple possible paths
+          const possiblePaths = [
+            path.join(process.cwd(), 'packages/data-import/src/services/scrapeProductDetailCode.js'),
+            path.join(process.cwd(), 'node_modules/@nursery/data-import/src/services/scrapeProductDetailCode.js'),
+            path.join(process.cwd(), 'node_modules/@nursery/data-import/dist/services/scrapeProductDetailCode.js'),
+          ];
+          
+          let found = false;
+          for (const possiblePath of possiblePaths) {
+            try {
+              if (fs.existsSync(possiblePath)) {
+                scrapeCode = fs.readFileSync(possiblePath, 'utf-8');
+                found = true;
+                break;
+              }
+            } catch (e) {
+              // Continue to next path
+            }
+          }
+          
+          if (!found) {
+            throw new Error(`Could not find scrapeProductDetailCode.js. Tried: ${possiblePaths.join(', ')}. Original error: ${fileError instanceof Error ? fileError.message : String(fileError)}`);
+          }
+        } catch (fallbackError) {
+          throw new Error(`Failed to load scrape code: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
+        }
+      }
       
       // Extract just the function body (remove function declaration wrapper and closing brace)
       const functionBody = scrapeCode

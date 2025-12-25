@@ -5,8 +5,9 @@ import type React from "react"
 import { useState, useEffect, useCallback } from "react"
 import { Search, Clock, Package, BookOpen, Grid3x3 } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 
 interface SearchResult {
   type: "product" | "guide" | "category"
@@ -20,66 +21,23 @@ interface SearchResult {
   slug?: string
 }
 
-const mockSearchData: SearchResult[] = [
-  {
-    type: "product",
-    id: "1",
-    name: "Monstera Deliciosa",
-    botanicalName: "Monstera deliciosa",
-    price: 45.99,
-    image: "/monstera-deliciosa-full-plant-pot.jpg",
-  },
-  {
-    type: "product",
-    id: "2",
-    name: "Snake Plant",
-    botanicalName: "Sansevieria trifasciata",
-    price: 32.99,
-    image: "/snake-plant-sansevieria-pot.jpg",
-  },
-  {
-    type: "product",
-    id: "3",
-    name: "Fiddle Leaf Fig",
-    botanicalName: "Ficus lyrata",
-    price: 68.99,
-    image: "/fiddle-leaf-fig-tree-pot.jpg",
-  },
-  {
-    type: "product",
-    id: "4",
-    name: "Peace Lily",
-    botanicalName: "Spathiphyllum",
-    price: 29.99,
-    image: "/peace-lily-white-flower-pot.jpg",
-  },
-  {
-    type: "guide",
-    id: "1",
-    name: "Beginner's Guide to Indoor Plant Care",
-    excerpt: "Learn the essentials of keeping your indoor plants thriving",
-  },
-  {
-    type: "guide",
-    id: "2",
-    name: "Creating a Drought-Tolerant Garden",
-    excerpt: "Design a beautiful, water-wise garden",
-  },
-  {
-    type: "category",
-    id: "1",
-    name: "Indoor Plants",
-    productCount: 156,
-    slug: "indoor-plants",
-  },
-  {
-    type: "category",
-    id: "2",
-    name: "Succulents",
-    productCount: 89,
-    slug: "succulents",
-  },
-]
+interface ProductSearchResult {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  price: number
+  availability: string
+  imageUrl: string | null
+  images: string[]
+  botanicalName: string | null
+  commonName: string | null
+  category: {
+    id: string
+    name: string
+    slug: string
+  } | null
+}
 
 export function SearchBar() {
   const [open, setOpen] = useState(false)
@@ -87,6 +45,7 @@ export function SearchBar() {
   const [results, setResults] = useState<SearchResult[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [recentSearches, setRecentSearches] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
   // Load recent searches from localStorage
@@ -97,25 +56,58 @@ export function SearchBar() {
     }
   }, [])
 
-  // Search functionality
-  const performSearch = useCallback((searchQuery: string) => {
+  // Search functionality with debouncing
+  const performSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults([])
+      setIsLoading(false)
       return
     }
 
-    const filtered = mockSearchData.filter(
-      (item) =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (item.botanicalName && item.botanicalName.toLowerCase().includes(searchQuery.toLowerCase())),
-    )
+    setIsLoading(true)
+    
+    try {
+      const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&limit=10`)
+      const data = await response.json()
+      
+      // Convert API products to SearchResult format
+      const productResults: SearchResult[] = (data.products || []).map((product: ProductSearchResult) => {
+        // Get image URL - filter out Plantmark URLs, use local images only
+        const images = (product.images as string[]) || []
+        const localImages = images.filter((img: string) => img && !img.includes('plantmark.com.au'))
+        const localImageUrl = product.imageUrl && !product.imageUrl.includes('plantmark.com.au') 
+          ? product.imageUrl 
+          : null
+        const imageUrl = localImages[0] || localImageUrl || "/placeholder.svg"
 
-    setResults(filtered)
-    setSelectedIndex(0)
+        return {
+          type: "product" as const,
+          id: product.id,
+          name: product.commonName || product.name,
+          botanicalName: product.botanicalName || undefined,
+          price: Number(product.price) || undefined,
+          image: imageUrl,
+          slug: product.slug,
+        }
+      })
+
+      setResults(productResults)
+      setSelectedIndex(0)
+    } catch (error) {
+      console.error('Search error:', error)
+      setResults([])
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
+  // Debounce search requests
   useEffect(() => {
-    performSearch(query)
+    const timeoutId = setTimeout(() => {
+      performSearch(query)
+    }, 300) // 300ms debounce
+
+    return () => clearTimeout(timeoutId)
   }, [query, performSearch])
 
   // Save recent search
@@ -176,6 +168,7 @@ export function SearchBar() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl p-0 gap-0">
+          <DialogTitle className="sr-only">Search for plants</DialogTitle>
           <div className="relative">
             <Search className="absolute left-4 top-4 h-5 w-5 text-muted-foreground" />
             <Input
@@ -209,11 +202,15 @@ export function SearchBar() {
               </div>
             )}
 
-            {query && results.length === 0 && (
+            {query && isLoading && (
+              <div className="p-8 text-center text-muted-foreground">Searching...</div>
+            )}
+
+            {query && !isLoading && results.length === 0 && (
               <div className="p-8 text-center text-muted-foreground">No results found for "{query}"</div>
             )}
 
-            {query && results.length > 0 && (
+            {query && !isLoading && results.length > 0 && (
               <div className="py-2">
                 {groupedResults.products.length > 0 && (
                   <div className="mb-4">
@@ -225,38 +222,13 @@ export function SearchBar() {
                       {groupedResults.products.map((result, index) => {
                         const globalIndex = results.indexOf(result)
                         return (
-                          <button
+                          <ProductSearchResultItem
                             key={result.id}
-                            onClick={() => handleResultClick(result)}
-                            className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
-                              selectedIndex === globalIndex ? "bg-[#87a96b] text-white" : "hover:bg-muted"
-                            }`}
-                          >
-                            {result.image && (
-                              <img
-                                src={result.image || "/placeholder.svg"}
-                                alt={result.name}
-                                className="w-12 h-12 object-cover rounded-md"
-                              />
-                            )}
-                            <div className="flex-1 text-left">
-                              <p
-                                className={`font-serif font-semibold ${selectedIndex === globalIndex ? "text-white" : ""}`}
-                              >
-                                {result.name}
-                              </p>
-                              <p
-                                className={`text-xs font-mono italic ${selectedIndex === globalIndex ? "text-white/80" : "text-muted-foreground"}`}
-                              >
-                                {result.botanicalName}
-                              </p>
-                            </div>
-                            <span
-                              className={`font-bold ${selectedIndex === globalIndex ? "text-white" : "text-primary"}`}
-                            >
-                              ${result.price}
-                            </span>
-                          </button>
+                            result={result}
+                            globalIndex={globalIndex}
+                            selectedIndex={selectedIndex}
+                            onResultClick={handleResultClick}
+                          />
                         )
                       })}
                     </div>
@@ -342,6 +314,7 @@ export function SearchBar() {
                     onClick={() => {
                       saveRecentSearch(query)
                       setOpen(false)
+                      router.push(`/search?q=${encodeURIComponent(query)}`)
                     }}
                     className="w-full px-4 py-3 text-sm font-medium text-primary hover:bg-muted transition-colors text-center"
                   >
@@ -354,5 +327,71 @@ export function SearchBar() {
         </DialogContent>
       </Dialog>
     </>
+  )
+}
+
+// Separate component for product search result with image error handling
+function ProductSearchResultItem({
+  result,
+  globalIndex,
+  selectedIndex,
+  onResultClick,
+}: {
+  result: SearchResult
+  globalIndex: number
+  selectedIndex: number
+  onResultClick: (result: SearchResult) => void
+}) {
+  const [imgSrc, setImgSrc] = useState(result.image || "/placeholder.svg")
+  const [hasError, setHasError] = useState(false)
+
+  // Reset image source when result changes
+  useEffect(() => {
+    setImgSrc(result.image || "/placeholder.svg")
+    setHasError(false)
+  }, [result.image])
+
+  const handleError = () => {
+    if (!hasError) {
+      setHasError(true)
+      setImgSrc("/placeholder.svg")
+    }
+  }
+
+  return (
+    <button
+      onClick={() => onResultClick(result)}
+      className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
+        selectedIndex === globalIndex ? "bg-[#87a96b] text-white" : "hover:bg-muted"
+      }`}
+    >
+      <div className="relative w-12 h-12 flex-shrink-0">
+        <Image
+          src={imgSrc}
+          alt={result.name}
+          fill
+          className="object-cover rounded-md"
+          unoptimized={imgSrc.startsWith('/products/')}
+          onError={handleError}
+        />
+      </div>
+      <div className="flex-1 text-left">
+        <p
+          className={`font-serif font-semibold ${selectedIndex === globalIndex ? "text-white" : ""}`}
+        >
+          {result.name}
+        </p>
+        <p
+          className={`text-xs font-mono italic ${selectedIndex === globalIndex ? "text-white/80" : "text-muted-foreground"}`}
+        >
+          {result.botanicalName}
+        </p>
+      </div>
+      <span
+        className={`font-bold ${selectedIndex === globalIndex ? "text-white" : "text-primary"}`}
+      >
+        ${result.price}
+      </span>
+    </button>
   )
 }

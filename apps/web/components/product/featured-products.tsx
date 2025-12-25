@@ -49,6 +49,7 @@ export function FeaturedProducts({ products }: FeaturedProductsProps) {
                       alt={product.name}
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      unoptimized={imageUrl.startsWith('/products/')}
                     />
                     <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       <Button

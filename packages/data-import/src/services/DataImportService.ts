@@ -306,14 +306,30 @@ export class DataImportService {
     let localImageUrl: string | undefined = normalized.imageUrl;
     
     try {
-      // Download main image if it's from Plantmark
+      // Always try to download main image if it's from Plantmark (even if product exists)
       if (normalized.imageUrl && normalized.imageUrl.includes('plantmark.com.au')) {
+        console.log(`  📥 Downloading main image for ${normalized.name}: ${normalized.imageUrl}`);
         const mainImageResult = await this.imageDownloader.downloadImage(
           normalized.imageUrl,
           normalized.slug
         );
         if (mainImageResult.success && mainImageResult.localPath) {
           localImageUrl = mainImageResult.localPath;
+          console.log(`  ✅ Main image downloaded: ${mainImageResult.localPath}`);
+        } else {
+          console.warn(`  ⚠️  Main image download failed: ${mainImageResult.error || 'Unknown error'}`);
+          // Keep original URL if download fails (will be handled by fix-image-paths later)
+        }
+      } else if (normalized.imageUrl && !normalized.imageUrl.startsWith('/products/')) {
+        // If imageUrl exists but isn't local, try to download it
+        console.log(`  📥 Attempting to download image from: ${normalized.imageUrl}`);
+        const mainImageResult = await this.imageDownloader.downloadImage(
+          normalized.imageUrl,
+          normalized.slug
+        );
+        if (mainImageResult.success && mainImageResult.localPath) {
+          localImageUrl = mainImageResult.localPath;
+          console.log(`  ✅ Image downloaded: ${mainImageResult.localPath}`);
         }
       }
 
@@ -324,8 +340,17 @@ export class DataImportService {
         );
         
         if (plantmarkImages.length > 0) {
+          console.log(`  📥 Downloading ${plantmarkImages.length} additional images for ${normalized.name}`);
           const result = await this.imageDownloader.downloadImages(plantmarkImages, normalized.slug);
           downloadedImages = result.downloaded;
+          
+          if (result.failed.length > 0) {
+            console.warn(`  ⚠️  Failed to download ${result.failed.length} images:`, result.failed.map(f => f.url));
+          }
+          
+          if (downloadedImages.length > 0) {
+            console.log(`  ✅ Downloaded ${downloadedImages.length} images`);
+          }
           
           // Combine downloaded images with any non-Plantmark images
           const otherImages = normalized.images.filter((url: string) => 
@@ -337,7 +362,7 @@ export class DataImportService {
         }
       }
     } catch (error) {
-      console.warn(`Failed to download images for product ${normalized.name}:`, error);
+      console.error(`  ❌ Failed to download images for product ${normalized.name}:`, error);
       // Continue with original URLs if download fails
       downloadedImages = (normalized.images as string[]) || [];
     }

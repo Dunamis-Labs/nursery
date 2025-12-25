@@ -23,13 +23,16 @@ export function ProductsTopBar({
   setFilters,
 }: ProductsTopBarProps) {
   const activeFilters = [
-    ...filters.sunRequirements.map((f) => ({ type: "sunRequirements", value: f })),
-    ...filters.waterNeeds.map((f) => ({ type: "waterNeeds", value: f })),
-    ...filters.size.map((f) => ({ type: "size", value: f })),
+    ...(filters.sunRequirements || []).map((f) => ({ type: "sunRequirements", value: f })),
+    ...(filters.waterNeeds || []).map((f) => ({ type: "waterNeeds", value: f })),
+    ...(filters.humidity || []).map((f) => ({ type: "humidity", value: f })),
+    ...(filters.growthRate || []).map((f) => ({ type: "growthRate", value: f })),
+    ...(filters.difficulty || []).map((f) => ({ type: "difficulty", value: f })),
+    ...(filters.toxicity || []).map((f) => ({ type: "toxicity", value: f })),
   ]
 
   const removeFilter = (type: string, value: string) => {
-    const currentValues = filters[type as keyof FilterState] as string[]
+    const currentValues = (filters[type as keyof FilterState] as string[]) || []
     setFilters({
       ...filters,
       [type]: currentValues.filter((v) => v !== value),
@@ -40,7 +43,7 @@ export function ProductsTopBar({
     <div className="mb-6 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <p className="text-sm text-[#6b7280]">
-          Showing {filteredCount} of {totalProducts} products
+          Showing {filteredCount} of {totalProducts} {totalProducts === 1 ? 'product' : 'products'}
         </p>
         <div className="flex items-center gap-2">
           <span className="text-sm text-[#6b7280]">Sort by:</span>
@@ -49,11 +52,10 @@ export function ProductsTopBar({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="popularity">Popularity</SelectItem>
-              <SelectItem value="price-low">Price: Low to High</SelectItem>
-              <SelectItem value="price-high">Price: High to Low</SelectItem>
               <SelectItem value="name-asc">Name: A-Z</SelectItem>
               <SelectItem value="name-desc">Name: Z-A</SelectItem>
+              <SelectItem value="price-low">Price: Low to High</SelectItem>
+              <SelectItem value="price-high">Price: High to Low</SelectItem>
             </SelectContent>
           </Select>
         </div>

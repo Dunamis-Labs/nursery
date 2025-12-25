@@ -33,7 +33,42 @@ export function ProductTabs({ description, specifications, careInstructions }: P
 
       <TabsContent value="description" className="mt-6">
         <Card className="p-6 border-border">
-          <p className="text-foreground leading-relaxed">{description}</p>
+          <div className="prose prose-sm max-w-none">
+            {/* Check if description contains HTML tags */}
+            {description.includes('<') && description.includes('>') ? (
+              <div
+                className="prose-p:text-foreground prose-p:leading-relaxed prose-p:mb-4 last:prose-p:mb-0"
+                dangerouslySetInnerHTML={{ __html: description }}
+              />
+            ) : (
+              // Plain text or markdown - split by double newlines for paragraphs, render markdown bold
+              description.split(/\n\n+/).map((paragraph, index) => {
+                const trimmed = paragraph.trim();
+                
+                // Render markdown bold (**text**) as <strong>
+                const renderMarkdown = (text: string) => {
+                  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+                  return parts.map((part, i) => {
+                    if (part.startsWith('**') && part.endsWith('**')) {
+                      return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                    }
+                    return <span key={i}>{part}</span>;
+                  });
+                };
+                
+                return (
+                  <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
+                    {trimmed.split('\n').map((line, lineIndex, array) => (
+                      <span key={lineIndex}>
+                        {renderMarkdown(line.trim())}
+                        {lineIndex < array.length - 1 && <br />}
+                      </span>
+                    ))}
+                  </p>
+                );
+              })
+            )}
+          </div>
         </Card>
       </TabsContent>
 
@@ -63,10 +98,57 @@ export function ProductTabs({ description, specifications, careInstructions }: P
 
       <TabsContent value="care" className="mt-6">
         <Card className="p-6 border-border">
-          <div
-            className="prose prose-sm max-w-none prose-headings:font-serif prose-headings:text-foreground prose-headings:font-semibold prose-headings:mt-6 prose-headings:mb-3 first:prose-headings:mt-0 prose-p:text-muted-foreground prose-p:leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: careInstructions }}
-          />
+          <div className="prose prose-sm max-w-none">
+            {/* Check if careInstructions contains HTML tags */}
+            {careInstructions.includes('<') && careInstructions.includes('>') ? (
+              <div
+                className="prose-headings:font-serif prose-headings:text-foreground prose-headings:font-semibold prose-headings:mt-6 prose-headings:mb-3 first:prose-headings:mt-0 prose-p:text-foreground prose-p:leading-relaxed prose-p:mb-4 last:prose-p:mb-0"
+                dangerouslySetInnerHTML={{ __html: careInstructions }}
+              />
+            ) : (
+              // Plain text - split by double newlines for paragraphs, handle markdown headings
+              careInstructions.split(/\n\n+/).map((paragraph, index) => {
+                const trimmed = paragraph.trim();
+                
+                // Check if paragraph is a markdown heading
+                if (trimmed.startsWith('#')) {
+                  const level = trimmed.match(/^#+/)?.[0].length || 1;
+                  const text = trimmed.replace(/^#+\s*/, '');
+                  const HeadingTag = `h${Math.min(level, 6)}` as keyof JSX.IntrinsicElements;
+                  return (
+                    <HeadingTag 
+                      key={index} 
+                      className="font-serif text-foreground font-semibold mt-6 mb-3 first:mt-0"
+                    >
+                      {text}
+                    </HeadingTag>
+                  );
+                }
+                
+                // Regular paragraph - render markdown bold
+                const renderMarkdown = (text: string) => {
+                  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+                  return parts.map((part, i) => {
+                    if (part.startsWith('**') && part.endsWith('**')) {
+                      return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                    }
+                    return <span key={i}>{part}</span>;
+                  });
+                };
+                
+                return (
+                  <p key={index} className="text-foreground leading-relaxed mb-4 last:mb-0">
+                    {trimmed.split('\n').map((line, lineIndex, array) => (
+                      <span key={lineIndex}>
+                        {renderMarkdown(line.trim())}
+                        {lineIndex < array.length - 1 && <br />}
+                      </span>
+                    ))}
+                  </p>
+                );
+              })
+            )}
+          </div>
         </Card>
       </TabsContent>
     </Tabs>
