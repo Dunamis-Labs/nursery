@@ -1,5 +1,18 @@
 import type { PlantmarkProduct, PlantmarkApiConfig } from '../types';
 
+// Helper to make dynamic imports truly dynamic (prevents Turbopack from analyzing)
+const dynamicRequire = (moduleName: string) => {
+  if (typeof require !== 'undefined' && require.resolve) {
+    try {
+      require.resolve(moduleName);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return false;
+};
+
 /**
  * Plantmark Web Scraper
  * 
@@ -36,18 +49,33 @@ export class PlantmarkScraper {
     }
 
     // Try Puppeteer first, fallback to Playwright
-    try {
-      const puppeteer = await import('puppeteer');
-      this.browser = await puppeteer.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      });
-      (this.browser as any).__isPuppeteer = true;
-      // For Puppeteer, browser context is implicit - cookies are shared automatically
-      this.browserContext = this.browser;
-    } catch (error) {
+    // These are optional dependencies - use try/catch to handle gracefully
+    // The imports are wrapped to prevent Turbopack from analyzing them at build time
+    
+    // Try Puppeteer first
+    if (dynamicRequire('puppeteer')) {
       try {
-        const { chromium } = await import('playwright');
+        // Use string-based import to make it truly dynamic
+        const moduleName = 'puppeteer';
+        const puppeteer = await import(moduleName);
+        this.browser = await puppeteer.launch({
+          headless: 'new',
+          args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        });
+        (this.browser as any).__isPuppeteer = true;
+        // For Puppeteer, browser context is implicit - cookies are shared automatically
+        this.browserContext = this.browser;
+        return;
+      } catch (error) {
+        // Fall through to Playwright
+      }
+    }
+
+    // Try Playwright as fallback
+    if (dynamicRequire('playwright')) {
+      try {
+        const moduleName = 'playwright';
+        const { chromium } = await import(moduleName);
         this.browser = await chromium.launch({
           headless: true,
         });
@@ -59,13 +87,16 @@ export class PlantmarkScraper {
           // Ensure cookies persist across navigations
           storageState: undefined, // We'll set cookies manually
         });
-      } catch (playwrightError) {
-        throw new Error(
-          'Neither Puppeteer nor Playwright is available. ' +
-          'Install one: npm install puppeteer or npm install playwright'
-        );
+        return;
+      } catch (error) {
+        // Continue to error
       }
     }
+
+    throw new Error(
+      'Neither Puppeteer nor Playwright is available. ' +
+      'Install one: npm install puppeteer or npm install playwright'
+    );
 
     // Login if credentials are provided
     if (this.config.email && this.config.password && !this.isLoggedIn) {
