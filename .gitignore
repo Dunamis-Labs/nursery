@@ -56,3 +56,7 @@ logs/
 # OS
 Thumbs.db
 
+# Images (hosted on Vercel Blob Storage)
+apps/web/public/categories/
+apps/web/public/products/
+
