@@ -103,6 +103,15 @@ export function Navigation({ categories = [] }: NavigationProps) {
     }))
     .sort((a, b) => a.name.localeCompare(b.name))
 
+  // Debug logging
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Navigation: Received categories:', categories.length)
+      console.log('Navigation: navCategories:', navCategories.length)
+      console.log('Navigation: Category names:', navCategories.map(c => c.name))
+    }
+  }, [categories, navCategories])
+
   // Don't render Sheet/Dialog on server to avoid Context Provider issues
   if (!mounted) {
     return (
@@ -268,16 +277,17 @@ export function Navigation({ categories = [] }: NavigationProps) {
             </Link>
 
             <div className="hidden lg:flex items-center gap-6">
-              <div className="group relative">
-                <button className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors flex items-center gap-1 py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300">
-                  Categories
-                  <ChevronDown className="h-4 w-4" />
-                </button>
+              {navCategories.length > 0 && (
+                <div className="group relative">
+                  <button className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors flex items-center gap-1 py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300">
+                    Categories
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
 
-                <div className="absolute top-full left-0 mt-2 w-[900px] max-h-[600px] overflow-y-auto bg-white border border-[#e5e7eb] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-50">
-                  <div className="p-6">
-                    <div className="grid grid-cols-3 gap-3">
-                      {navCategories.map((category) => {
+                  <div className="absolute top-full left-0 mt-2 w-[900px] max-h-[600px] overflow-y-auto bg-white border border-[#e5e7eb] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-50">
+                    <div className="p-6">
+                      <div className="grid grid-cols-3 gap-3">
+                        {navCategories.map((category) => {
                         const Icon = category.icon;
                         return (
                           <Link

@@ -47,8 +47,18 @@ export async function NavigationWrapper() {
         name: 'asc',
       },
     });
+    
+    // Log if no categories found
+    if (categories.length === 0) {
+      console.warn('NavigationWrapper: No categories found in database. Expected categories:', MAIN_CATEGORIES);
+    }
   } catch (dbError: any) {
     console.error('NavigationWrapper: Failed to fetch categories:', dbError);
+    console.error('NavigationWrapper: Error details:', {
+      message: dbError?.message,
+      code: dbError?.code,
+      stack: dbError?.stack,
+    });
     // Continue with empty categories array - Navigation component can handle it
     categories = [];
   }
@@ -62,6 +72,12 @@ export async function NavigationWrapper() {
     seen.add(cat.name);
     return true;
   });
+
+  // Debug logging (only in development)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('NavigationWrapper: Fetched categories:', uniqueCategories.length);
+    console.log('NavigationWrapper: Category names:', uniqueCategories.map(c => c.name));
+  }
 
   // Always render Navigation component - it can handle empty categories
   // If Navigation fails, it will be caught by Next.js error boundary

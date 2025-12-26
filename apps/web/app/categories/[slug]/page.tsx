@@ -197,6 +197,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     );
   } catch (error) {
     console.error('Error rendering category page:', error);
+    // Log more details for debugging
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     // Return error page instead of throwing to prevent complete page failure
     return (
       <div className="min-h-screen">
@@ -207,6 +212,13 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             <p className="text-muted-foreground mb-8">
               We encountered an error loading this category page. Please try again later.
             </p>
+            {process.env.NODE_ENV === 'development' && error instanceof Error && (
+              <pre className="text-left bg-muted p-4 rounded mb-4 text-xs overflow-auto">
+                {error.message}
+                {'\n'}
+                {error.stack}
+              </pre>
+            )}
             <a href="/" className="text-primary hover:underline">Return to homepage</a>
           </div>
         </div>
