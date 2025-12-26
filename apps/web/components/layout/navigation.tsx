@@ -310,7 +310,7 @@ export function Navigation({ categories = [] }: NavigationProps) {
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <Link
                 href="/plant-finder"

@@ -68,7 +68,6 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@next/swc-darwin-arm64": "^16.1.1",
     "@tailwindcss/postcss": "^4.1.9",
     "@testing-library/react": "^14.1.2",
     "@types/node": "^22",
@@ -86,6 +85,7 @@
   },
   "optionalDependencies": {
     "@nursery/data-import": "*",
+    "@next/swc-darwin-arm64": "^16.1.1",
     "lightningcss-linux-x64-gnu": "^1.30.0"
   }
 }
