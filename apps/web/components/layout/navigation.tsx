@@ -118,22 +118,22 @@ export function Navigation({ categories = [] }: NavigationProps) {
               </Link>
             </div>
             <div className="hidden lg:flex items-center gap-6">
-              <Link href="/plant-finder" className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Plant Finder</Link>
-              <Link href="/plant-care" className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Plant Care</Link>
-              <Link href="/guides" className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Guides</Link>
-              <Link href="/blog" className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Blog</Link>
-              <Link href="/about" className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">About</Link>
+              <Link href="/plant-finder" prefetch={false} className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Plant Finder</Link>
+              <Link href="/plant-care" prefetch={false} className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Plant Care</Link>
+              <Link href="/guides" prefetch={false} className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Guides</Link>
+              <Link href="/blog" prefetch={false} className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Blog</Link>
+              <Link href="/about" prefetch={false} className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">About</Link>
             </div>
             <div className="flex items-center gap-4">
               <button className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors" aria-label="Search">
                 <Search className="h-5 w-5" />
               </button>
-              <Link href="/account" aria-label="Account">
+              <Link href="/account" prefetch={false} aria-label="Account">
                 <Button variant="ghost" size="icon" className="hover:bg-[#87a96b]/10">
                   <User className="h-5 w-5 text-[#2c2c2c]" />
                 </Button>
               </Link>
-              <Link href="/cart" aria-label="Cart">
+              <Link href="/cart" prefetch={false} aria-label="Cart">
                 <Button variant="ghost" size="icon" className="hover:bg-[#87a96b]/10">
                   <ShoppingCart className="h-5 w-5 text-[#2c2c2c]" />
                 </Button>
@@ -204,6 +204,7 @@ export function Navigation({ categories = [] }: NavigationProps) {
                     <div className="border-t border-[#e5e7eb] mt-2 pt-2 flex flex-col gap-1">
                       <Link
                         href="/plant-finder"
+                        prefetch={false}
                         className="flex items-center gap-3 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-[#87a96b]/10 hover:text-[#2d5016] transition-all rounded-lg mx-2"
                         onClick={() => setOpen(false)}
                       >
@@ -212,6 +213,7 @@ export function Navigation({ categories = [] }: NavigationProps) {
                       </Link>
                       <Link
                         href="/plant-care"
+                        prefetch={false}
                         className="flex items-center gap-3 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-[#87a96b]/10 hover:text-[#2d5016] transition-all rounded-lg mx-2"
                         onClick={() => setOpen(false)}
                       >
@@ -220,6 +222,7 @@ export function Navigation({ categories = [] }: NavigationProps) {
                       </Link>
                       <Link
                         href="/guides"
+                        prefetch={false}
                         className="flex items-center gap-3 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-[#87a96b]/10 hover:text-[#2d5016] transition-all rounded-lg mx-2"
                         onClick={() => setOpen(false)}
                       >
@@ -228,6 +231,7 @@ export function Navigation({ categories = [] }: NavigationProps) {
                       </Link>
                       <Link
                         href="/blog"
+                        prefetch={false}
                         className="flex items-center gap-3 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-[#87a96b]/10 hover:text-[#2d5016] transition-all rounded-lg mx-2"
                         onClick={() => setOpen(false)}
                       >
@@ -236,6 +240,7 @@ export function Navigation({ categories = [] }: NavigationProps) {
                       </Link>
                       <Link
                         href="/about"
+                        prefetch={false}
                         className="flex items-center gap-3 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-[#87a96b]/10 hover:text-[#2d5016] transition-all rounded-lg mx-2"
                         onClick={() => setOpen(false)}
                       >
@@ -244,6 +249,7 @@ export function Navigation({ categories = [] }: NavigationProps) {
                       </Link>
                       <Link
                         href="/account"
+                        prefetch={false}
                         className="flex items-center gap-3 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-[#87a96b]/10 hover:text-[#2d5016] transition-all rounded-lg mx-2"
                         onClick={() => setOpen(false)}
                       >
@@ -298,35 +304,40 @@ export function Navigation({ categories = [] }: NavigationProps) {
 
               <Link
                 href="/plant-finder"
+                prefetch={false}
                 className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300"
               >
                 Plant Finder
               </Link>
               <Link
                 href="/plant-care"
+                prefetch={false}
                 className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300"
               >
                 Plant Care
               </Link>
               <Link
                 href="/guides"
+                prefetch={false}
                 className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300"
               >
                 Guides
               </Link>
               <Link
                 href="/blog"
+                prefetch={false}
                 className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300"
               >
                 Blog
               </Link>
               <Link
                 href="/about"
+                prefetch={false}
                 className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300"
               >
                 About
               </Link>
-              <Link href="/account">
+              <Link href="/account" prefetch={false}>
                 <Button variant="ghost" size="icon" className="hover:bg-[#87a96b]/10">
                   <User className="h-5 w-5 text-[#2c2c2c]" />
                 </Button>
@@ -336,12 +347,12 @@ export function Navigation({ categories = [] }: NavigationProps) {
 
           <div className="flex items-center gap-4">
             <SearchBar />
-            <Link href="/account">
+            <Link href="/account" prefetch={false}>
               <Button variant="ghost" size="icon" className="hover:bg-[#87a96b]/10">
                 <User className="h-5 w-5 text-[#2c2c2c]" />
               </Button>
             </Link>
-            <Link href="/cart">
+            <Link href="/cart" prefetch={false}>
               <Button variant="ghost" size="icon" className="relative hover:bg-[#87a96b]/10">
                 <ShoppingCart className="h-5 w-5 text-[#2c2c2c]" />
                 <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-[#2d5016] text-white text-xs flex items-center justify-center font-medium">

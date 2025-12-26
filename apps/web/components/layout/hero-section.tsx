@@ -23,7 +23,7 @@ export function HeroSection() {
           guidance, and reliable plant delivery across Australia.
         </p>
         <div className="flex gap-4 justify-center flex-wrap">
-          <Link href="/products">
+          <Link href="/products" prefetch={false}>
             <Button size="lg" className="bg-[#2d5016] hover:bg-[#2d5016]/90 text-white font-medium px-8">
               Shop Plants
             </Button>
