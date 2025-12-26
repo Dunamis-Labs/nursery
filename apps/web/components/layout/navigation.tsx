@@ -277,7 +277,7 @@ export function Navigation({ categories = [] }: NavigationProps) {
             </Link>
 
             <div className="hidden lg:flex items-center gap-6">
-              {navCategories.length > 0 && (
+              {navCategories.length > 0 ? (
                 <div className="group relative">
                   <button className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors flex items-center gap-1 py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300">
                     Categories
@@ -310,7 +310,7 @@ export function Navigation({ categories = [] }: NavigationProps) {
                     </div>
                   </div>
                 </div>
-              )}
+              ) : null}
 
               <Link
                 href="/plant-finder"
