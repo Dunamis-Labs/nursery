@@ -23,12 +23,8 @@ export function RelatedProducts({ currentProductId, products }: RelatedProductsP
         <div className="flex gap-6 min-w-max lg:min-w-0 lg:grid lg:grid-cols-5">
           {products.map((product) => {
             const images = (product.images as string[]) || []
-            // Filter out Plantmark URLs - use local images only or placeholder
-            const localImages = images.filter(img => img && !img.includes('plantmark.com.au'))
-            const localImageUrl = product.imageUrl && !product.imageUrl.includes('plantmark.com.au') 
-              ? product.imageUrl 
-              : null
-            const imageUrl = localImages[0] || localImageUrl || "/placeholder.svg"
+            // Use database URLs (Vercel Blob Storage) directly, fallback to placeholder
+            const imageUrl = product.imageUrl || images[0] || "/placeholder.svg"
             
             return (
               <RelatedProductCard key={product.id} product={product} imageUrl={imageUrl} />

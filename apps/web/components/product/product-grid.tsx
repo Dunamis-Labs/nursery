@@ -200,12 +200,8 @@ export function ProductGrid({ products, filters, sortBy, categoryName }: Product
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
           {displayedProducts.map((product) => {
             const images = (product.images as string[]) || []
-            // Filter out Plantmark URLs - use local images only or placeholder
-            const localImages = images.filter(img => img && !img.includes('plantmark.com.au'))
-            const localImageUrl = product.imageUrl && !product.imageUrl.includes('plantmark.com.au') 
-              ? product.imageUrl 
-              : null
-            const imageUrl = localImages[0] || localImageUrl || "/placeholder.svg"
+            // Use database URLs (Vercel Blob Storage) directly, fallback to placeholder
+            const imageUrl = product.imageUrl || images[0] || "/placeholder.svg"
             
             return (
               <ProductCard key={product.id} product={product} imageUrl={imageUrl} />
@@ -295,7 +291,7 @@ function ProductCard({
             alt={product.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
-            unoptimized={imgSrc.startsWith('/products/')}
+            unoptimized={imgSrc.startsWith('/products/') || imgSrc.startsWith('/categories/')}
             priority={false}
             onError={handleError}
           />

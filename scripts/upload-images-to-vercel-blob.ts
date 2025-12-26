@@ -174,7 +174,7 @@ async function updateProductImages(productSlug: string, imageUrl: string, images
       where: { slug: productSlug },
       data: {
         imageUrl,
-        images,
+        images: images.length > 0 ? images : null, // Set to null if empty array
       },
     });
   } catch (error) {
@@ -269,21 +269,18 @@ async function main() {
         // Try to match with actual category names
         categoryUrlMap.set(img.relativePath, blobUrl);
       } else {
-        // For products, we'll need to match by filename pattern
-        // Format: slug-hash.ext
-        const filename = basename(img.path, extname(img.path));
-        const match = filename.match(/^(.+?)-[a-f0-9]{8}$/);
-        if (match) {
-          const slug = match[1];
-          if (!productUrlMap.has(slug)) {
-            productUrlMap.set(slug, { imageUrl: '', images: [] });
-          }
-          const productData = productUrlMap.get(slug)!;
-          if (img.path.includes('main') || productData.images.length === 0) {
-            productData.imageUrl = blobUrl;
-          }
-          productData.images.push(blobUrl);
+        // For products, store by filename (with extension) to match by existing imageUrl
+        // Format: slug-hash.ext (e.g., "acer-palmatum-0ffbd9a2.jpg")
+        const filename = basename(img.path); // Keep extension for matching
+        if (!productUrlMap.has(filename)) {
+          productUrlMap.set(filename, { imageUrl: '', images: [] });
         }
+        const productData = productUrlMap.get(filename)!;
+        // First image becomes the main imageUrl, rest go in images array
+        if (productData.images.length === 0) {
+          productData.imageUrl = blobUrl;
+        }
+        productData.images.push(blobUrl);
       }
     } else {
       failed++;
@@ -332,15 +329,93 @@ async function main() {
     }
   }
 
-  // Update products
+  // Update products - match by existing imageUrl paths
   if (productUrlMap.size > 0 && !CATEGORIES_ONLY) {
-    console.log(`Updating ${productUrlMap.size} product image references...`);
-    for (const [slug, imageData] of productUrlMap.entries()) {
-      if (prisma) {
-        await updateProductImages(slug, imageData.imageUrl, imageData.images, prisma);
-      } else {
-        console.log(`  [DRY RUN] Would update product ${slug}`);
+    console.log(`\nUpdating ${productUrlMap.size} product image references...\n`);
+    let updated = 0;
+    let notFound = 0;
+    
+    // Get all products to check for local image paths
+    const allProducts = await prisma.product.findMany({
+      select: { id: true, name: true, slug: true, imageUrl: true, images: true },
+    });
+    
+    console.log(`  Checking ${allProducts.length} products for local image paths...\n`);
+    
+    // Create a map of filename -> product(s) for quick lookup
+    const filenameToProducts = new Map<string, typeof allProducts>();
+    
+    for (const product of allProducts) {
+      // Check imageUrl
+      if (product.imageUrl && (product.imageUrl.startsWith('/products/') || product.imageUrl.includes('.jpg') || product.imageUrl.includes('.jpeg') || product.imageUrl.includes('.png'))) {
+        const filename = basename(product.imageUrl);
+        if (!filenameToProducts.has(filename)) {
+          filenameToProducts.set(filename, []);
+        }
+        filenameToProducts.get(filename)!.push(product);
       }
+      
+      // Also check images array (JSON field)
+      if (product.images) {
+        const imagesArray = Array.isArray(product.images) ? product.images : [];
+        for (const img of imagesArray) {
+          if (typeof img === 'string' && (img.startsWith('/products/') || img.includes('.jpg') || img.includes('.jpeg') || img.includes('.png'))) {
+            const filename = basename(img);
+            if (!filenameToProducts.has(filename)) {
+              filenameToProducts.set(filename, []);
+            }
+            // Only add if not already added from imageUrl
+            if (!filenameToProducts.get(filename)!.some(p => p.id === product.id)) {
+              filenameToProducts.get(filename)!.push(product);
+            }
+          }
+        }
+      }
+    }
+    
+    console.log(`  Found ${filenameToProducts.size} unique filenames to match\n`);
+    
+    // Update products by matching filenames
+    for (const [filename, imageData] of productUrlMap.entries()) {
+      if (prisma) {
+        const matchingProducts = filenameToProducts.get(filename) || [];
+        
+        if (matchingProducts.length > 0) {
+          for (const product of matchingProducts) {
+            await updateProductImages(product.slug, imageData.imageUrl, imageData.images, prisma);
+            console.log(`  ✅ Updated ${product.name} (${product.slug}): ${imageData.images.length} image(s)`);
+            updated++;
+          }
+        } else {
+          // Try to extract slug from filename and match that way as fallback
+          const match = filename.match(/^(.+?)-[a-f0-9]{8}\./i);
+          if (match) {
+            const slug = match[1];
+            const product = await prisma.product.findFirst({
+              where: { slug },
+              select: { id: true, name: true, slug: true },
+            });
+            
+            if (product) {
+              await updateProductImages(product.slug, imageData.imageUrl, imageData.images, prisma);
+              console.log(`  ✅ Updated ${product.name} (${product.slug}) by slug: ${imageData.images.length} image(s)`);
+              updated++;
+            } else {
+              console.log(`  ⚠️  Product not found for filename: ${filename}`);
+              notFound++;
+            }
+          } else {
+            console.log(`  ⚠️  Could not parse filename: ${filename}`);
+            notFound++;
+          }
+        }
+      } else {
+        console.log(`  [DRY RUN] Would update product with filename ${filename} (${imageData.images.length} image(s))`);
+      }
+    }
+    
+    if (updated > 0 || notFound > 0) {
+      console.log(`\n  Summary: ${updated} updated, ${notFound} not found in database`);
     }
   }
 

@@ -84,14 +84,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
   // Get detailed description from ProductContent, fallback to basic description
   const detailedDescription = product.content?.detailedDescription || product.description || 'No description available.';
   const images = (product.images as string[]) || [];
-  // Filter out Plantmark URLs - use local images only or placeholder
-  const localImages = images.filter(img => img && !img.includes('plantmark.com.au'));
-  const localImageUrl = product.imageUrl && !product.imageUrl.includes('plantmark.com.au') 
-    ? product.imageUrl 
-    : null;
-  const allImages = localImages.length > 0 
-    ? localImages 
-    : (localImageUrl ? [localImageUrl] : ['/placeholder.svg']);
+  // Use database URLs (Vercel Blob Storage) directly, fallback to placeholder
+  const allImages = images.length > 0 
+    ? images 
+    : (product.imageUrl ? [product.imageUrl] : ['/placeholder.svg']);
 
   // Convert Decimal to number for client components
   // Include content for idealFor/notIdealFor display

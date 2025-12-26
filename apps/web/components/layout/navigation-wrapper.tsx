@@ -11,12 +11,13 @@ export async function NavigationWrapper() {
     const dbModule = await import('@nursery/db');
     prisma = dbModule.prisma;
   } catch (error: any) {
+    console.error('NavigationWrapper: Failed to import database module:', error);
     return (
       <nav className="sticky top-0 z-50 bg-white border-b border-[#e5e7eb] shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <span className="font-serif text-2xl font-bold text-[#2d5016]">The Plant Nursery</span>
+              <img src="/logo.svg" alt="The Plant Nursery" className="h-10 w-auto" />
             </div>
           </div>
         </div>
@@ -47,13 +48,14 @@ export async function NavigationWrapper() {
       },
     });
   } catch (dbError: any) {
+    console.error('NavigationWrapper: Failed to fetch categories:', dbError);
     // Return empty navigation if database fails
     return (
       <nav className="sticky top-0 z-50 bg-white border-b border-[#e5e7eb] shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <span className="font-serif text-2xl font-bold text-[#2d5016]">The Plant Nursery</span>
+              <img src="/logo.svg" alt="The Plant Nursery" className="h-10 w-auto" />
             </div>
           </div>
         </div>
@@ -74,13 +76,14 @@ export async function NavigationWrapper() {
   try {
     return <Navigation categories={uniqueCategories} />;
   } catch (error: any) {
+    console.error('NavigationWrapper: Failed to render Navigation component:', error);
     // Return fallback navigation instead of throwing
     return (
       <nav className="sticky top-0 z-50 bg-white border-b border-[#e5e7eb] shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <span className="font-serif text-2xl font-bold text-[#2d5016]">The Plant Nursery</span>
+              <img src="/logo.svg" alt="The Plant Nursery" className="h-10 w-auto" />
             </div>
           </div>
         </div>

@@ -74,11 +74,8 @@ export function SearchBar() {
       const productResults: SearchResult[] = (data.products || []).map((product: ProductSearchResult) => {
         // Get image URL - filter out Plantmark URLs, use local images only
         const images = (product.images as string[]) || []
-        const localImages = images.filter((img: string) => img && !img.includes('plantmark.com.au'))
-        const localImageUrl = product.imageUrl && !product.imageUrl.includes('plantmark.com.au') 
-          ? product.imageUrl 
-          : null
-        const imageUrl = localImages[0] || localImageUrl || "/placeholder.svg"
+        // Use database URLs (Vercel Blob Storage) directly, fallback to placeholder
+        const imageUrl = product.imageUrl || images[0] || "/placeholder.svg"
 
         return {
           type: "product" as const,
