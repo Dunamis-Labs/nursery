@@ -117,6 +117,8 @@ function getAllImageFiles(dir: string, type: 'category' | 'product', fileList: I
   return fileList;
 }
 
+const ALLOW_OVERWRITE = process.argv.includes('--allow-overwrite');
+
 async function uploadImage(imageInfo: ImageInfo): Promise<string | null> {
   try {
     const fileBuffer = readFileSync(imageInfo.path);
@@ -134,6 +136,8 @@ async function uploadImage(imageInfo: ImageInfo): Promise<string | null> {
     const blob = await put(blobPath, fileBuffer, {
       access: 'public',
       token: BLOB_READ_WRITE_TOKEN!,
+      // Allow replacing existing blobs when rerunning uploads
+      allowOverwrite: ALLOW_OVERWRITE,
     });
 
     return blob.url;
