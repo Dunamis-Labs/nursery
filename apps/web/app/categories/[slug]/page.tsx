@@ -72,11 +72,12 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     }
 
     // Use database image (Vercel Blob Storage), fallback to header image map, then tile image map, then placeholder
-    const categoryImage = category.image || categoryHeaderImageMap[category.name] || categoryImageMap[category.name] || '/placeholder.svg';
+    let categoryImage = category.image || categoryHeaderImageMap[category.name] || categoryImageMap[category.name] || '/placeholder.svg';
     
-    // Ensure categoryImage is always a string
+    // Ensure categoryImage is always a string - use placeholder if invalid
     if (!categoryImage || typeof categoryImage !== 'string') {
-      throw new Error(`Invalid category image for ${category.name}`);
+      console.warn(`Invalid category image for ${category.name}, using placeholder`);
+      categoryImage = '/placeholder.svg';
     }
 
     // Fetch products for this category with specifications and metadata
@@ -159,13 +160,14 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       };
     });
 
-    // Ensure subheading is always a string
-    const subheading = category.content?.heroSubheading
+    // Ensure subheading is always a string - use fallback if invalid
+    let subheading = category.content?.heroSubheading
       || category.description
       || `${category.name} plants`;
     
     if (!subheading || typeof subheading !== 'string') {
-      throw new Error(`Invalid subheading for category ${category.name}`);
+      console.warn(`Invalid subheading for category ${category.name}, using fallback`);
+      subheading = `${category.name} plants`;
     }
 
     return (
@@ -195,7 +197,21 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     );
   } catch (error) {
     console.error('Error rendering category page:', error);
-    // Re-throw to trigger Next.js error boundary
-    throw error;
+    // Return error page instead of throwing to prevent complete page failure
+    return (
+      <div className="min-h-screen">
+        <NavigationWrapper />
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-4">Something went wrong</h1>
+            <p className="text-muted-foreground mb-8">
+              We encountered an error loading this category page. Please try again later.
+            </p>
+            <a href="/" className="text-primary hover:underline">Return to homepage</a>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
   }
 }

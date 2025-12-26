@@ -49,18 +49,8 @@ export async function NavigationWrapper() {
     });
   } catch (dbError: any) {
     console.error('NavigationWrapper: Failed to fetch categories:', dbError);
-    // Return empty navigation if database fails
-    return (
-      <nav className="sticky top-0 z-50 bg-white border-b border-[#e5e7eb] shadow-sm">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <img src="/logo.svg" alt="The Plant Nursery" className="h-10 w-auto" />
-            </div>
-          </div>
-        </div>
-      </nav>
-    );
+    // Continue with empty categories array - Navigation component can handle it
+    categories = [];
   }
 
   // Deduplicate by name (keep first occurrence)
@@ -73,22 +63,8 @@ export async function NavigationWrapper() {
     return true;
   });
 
-  try {
-    return <Navigation categories={uniqueCategories} />;
-  } catch (error: any) {
-    console.error('NavigationWrapper: Failed to render Navigation component:', error);
-    // Return fallback navigation instead of throwing
-    return (
-      <nav className="sticky top-0 z-50 bg-white border-b border-[#e5e7eb] shadow-sm">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <img src="/logo.svg" alt="The Plant Nursery" className="h-10 w-auto" />
-            </div>
-          </div>
-        </div>
-      </nav>
-    );
-  }
+  // Always render Navigation component - it can handle empty categories
+  // If Navigation fails, it will be caught by Next.js error boundary
+  return <Navigation categories={uniqueCategories} />;
 }
 
