@@ -277,40 +277,43 @@ export function Navigation({ categories = [] }: NavigationProps) {
             </Link>
 
             <div className="hidden lg:flex items-center gap-6">
-              {navCategories.length > 0 ? (
-                <div className="group relative">
-                  <button className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors flex items-center gap-1 py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300">
-                    Categories
-                    <ChevronDown className="h-4 w-4" />
-                  </button>
+              {navCategories.length > 0 && (
+                <>
+                  <div className="group relative">
+                    <button className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors flex items-center gap-1 py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300">
+                      Categories
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
 
-                  <div className="absolute top-full left-0 mt-2 w-[900px] max-h-[600px] overflow-y-auto bg-white border border-[#e5e7eb] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-50">
-                    <div className="p-6">
-                      <div className="grid grid-cols-3 gap-3">
-                        {navCategories.map((category) => {
-                        const Icon = category.icon;
-                        return (
-                          <Link
-                            key={category.slug}
-                            href={`/categories/${category.slug}`}
-                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#87a96b]/10 transition-colors group/item"
-                          >
-                            <div className="w-12 h-12 rounded-md bg-[#87a96b]/20 flex items-center justify-center flex-shrink-0 group-hover/item:bg-[#2d5016] transition-colors">
-                              <Icon className="h-6 w-6 text-[#2d5016] group-hover/item:text-white transition-colors" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="text-sm font-semibold text-[#2c2c2c] group-hover/item:text-[#2d5016] transition-colors truncate">
-                                {category.name}
-                              </div>
-                              <div className="text-xs text-muted-foreground truncate">{category.description}</div>
-                            </div>
-                          </Link>
-                        )
-                      })}
+                    <div className="absolute top-full left-0 mt-2 w-[900px] max-h-[600px] overflow-y-auto bg-white border border-[#e5e7eb] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-50">
+                      <div className="p-6">
+                        <div className="grid grid-cols-3 gap-3">
+                          {navCategories.map((category) => {
+                            const Icon = category.icon;
+                            return (
+                              <Link
+                                key={category.slug}
+                                href={`/categories/${category.slug}`}
+                                className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#87a96b]/10 transition-colors group/item"
+                              >
+                                <div className="w-12 h-12 rounded-md bg-[#87a96b]/20 flex items-center justify-center flex-shrink-0 group-hover/item:bg-[#2d5016] transition-colors">
+                                  <Icon className="h-6 w-6 text-[#2d5016] group-hover/item:text-white transition-colors" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-sm font-semibold text-[#2c2c2c] group-hover/item:text-[#2d5016] transition-colors truncate">
+                                    {category.name}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground truncate">{category.description}</div>
+                                </div>
+                              </Link>
+                            )
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ) : null}
+                </>
+              )}
 
               <Link
                 href="/plant-finder"
