@@ -26,6 +26,7 @@ export default async function HomePage() {
         name: true,
         slug: true,
         description: true,
+        image: true,
         _count: {
           select: { products: true },
         },

@@ -55,6 +55,14 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       name: true,
       slug: true,
       description: true,
+      image: true,
+      content: {
+        select: {
+          navTagline: true,
+          heroSubheading: true,
+          aboutParagraph: true,
+        },
+      },
     },
   });
 
@@ -62,8 +70,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     notFound();
   }
 
-  // Use header image if available, otherwise fall back to tile image
-  const categoryImage = categoryHeaderImageMap[category.name] || categoryImageMap[category.name] || '/placeholder.svg';
+  // Use database image (Vercel Blob Storage), fallback to header image map, then tile image map, then placeholder
+  const categoryImage = category.image || categoryHeaderImageMap[category.name] || categoryImageMap[category.name] || '/placeholder.svg';
 
   // Fetch products for this category with specifications and metadata
   const products = await prisma.product.findMany({
@@ -126,7 +134,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       <NavigationWrapper />
       <CategoryHero
         name={category.name}
-        description={category.description || `${category.name} plants`}
+        subheading={
+          category.content?.heroSubheading
+            || category.description
+            || `${category.name} plants`
+        }
         image={categoryImage}
       />
       <CategoryContent
@@ -134,11 +146,13 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         products={finalProductsForClient as any} // Type assertion needed due to Decimal/Date transformation
         priceRange={[minPrice, maxPrice]}
         explainer={
-          category.description && typeof category.description === 'string'
-            ? {
-                paragraphs: [category.description],
-              }
-            : undefined
+          (() => {
+            const about = category.content?.aboutParagraph || category.description
+            if (about && typeof about === 'string') {
+              return { paragraphs: [about] }
+            }
+            return undefined
+          })()
         }
       />
       <Footer />

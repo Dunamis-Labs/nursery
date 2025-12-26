@@ -36,6 +36,11 @@ export async function NavigationWrapper() {
         name: true,
         slug: true,
         description: true,
+        content: {
+          select: {
+            navTagline: true,
+          },
+        },
       },
       orderBy: {
         name: 'asc',

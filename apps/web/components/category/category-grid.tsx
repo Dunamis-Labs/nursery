@@ -27,8 +27,8 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           {categories.map((category) => {
             const productCount = category._count?.products || 0
-            // Use category image from mapping, fallback to placeholder
-            const imageUrl = categoryImageMap[category.name] || "/placeholder.svg"
+            // Use category image from database (Vercel Blob Storage), fallback to hardcoded map, then placeholder
+            const imageUrl = category.image || categoryImageMap[category.name] || "/placeholder.svg"
             
             return (
               <CategoryTile 

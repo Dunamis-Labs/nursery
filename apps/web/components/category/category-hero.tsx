@@ -5,11 +5,11 @@ import Image from "next/image"
 
 interface CategoryHeroProps {
   name: string
-  description: string
+  subheading: string
   image: string
 }
 
-export function CategoryHero({ name, description, image }: CategoryHeroProps) {
+export function CategoryHero({ name, subheading, image }: CategoryHeroProps) {
   const [imgSrc, setImgSrc] = useState(image)
   const [hasError, setHasError] = useState(false)
 
@@ -37,7 +37,7 @@ export function CategoryHero({ name, description, image }: CategoryHeroProps) {
 
       <div className="relative z-10 container mx-auto px-4 md:px-8 text-white">
         <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-balance">{name}</h1>
-        <p className="text-base md:text-lg lg:text-xl max-w-3xl opacity-95 leading-relaxed">{description}</p>
+        <p className="text-base md:text-lg lg:text-xl max-w-3xl opacity-95 leading-relaxed">{subheading}</p>
       </div>
     </section>
   )

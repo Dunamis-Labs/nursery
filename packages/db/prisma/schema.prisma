@@ -129,6 +129,9 @@ model CategoryContent {
   category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   description String?  @db.Text
   tips        String?  @db.Text
+  navTagline      String?   @db.VarChar(64)
+  heroSubheading  String?   @db.VarChar(200)
+  aboutParagraph  String?   @db.Text
   updatedAt   DateTime @default(now()) @updatedAt
 }
 

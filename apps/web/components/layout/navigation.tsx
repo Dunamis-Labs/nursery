@@ -31,11 +31,20 @@ import {
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Category } from "@prisma/client"
 import { SearchBar } from "@/components/search/search-bar"
 
+type NavCategoryInput = {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  content?: {
+    navTagline?: string | null
+  } | null
+}
+
 interface NavigationProps {
-  categories?: Category[]
+  categories?: NavCategoryInput[]
 }
 
 // Comprehensive icon mapping for all 15 Plantmark categories
@@ -86,7 +95,10 @@ export function Navigation({ categories = [] }: NavigationProps) {
       name: cat.name,
       slug: cat.slug,
       image: "/placeholder.svg", // TODO: Add image field to Category model
-      description: `${cat.name} plants`,
+      description: (() => {
+        const candidate = cat.content?.navTagline || cat.description || `${cat.name} plants`
+        return candidate.length > 28 ? `${candidate.slice(0, 27)}…` : candidate
+      })(),
       icon: categoryIcons[cat.name] || Leaf,
     }))
     .sort((a, b) => a.name.localeCompare(b.name))
