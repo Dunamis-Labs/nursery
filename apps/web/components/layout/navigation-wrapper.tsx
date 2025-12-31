@@ -40,6 +40,8 @@ export async function NavigationWrapper() {
       orderBy: {
         name: 'asc',
       },
+      // Force fresh fetch (no cache)
+      cache: false,
     });
   } catch (dbError: any) {
     // Return empty navigation if database fails

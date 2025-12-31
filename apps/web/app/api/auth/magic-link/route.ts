@@ -20,10 +20,14 @@ export async function POST(request: NextRequest) {
     if (firstName) data.firstName = firstName
     if (lastName) data.lastName = lastName
 
+    // Use request origin to ensure we stay on the same domain (production or local)
+    const requestUrl = new URL(request.url)
+    const origin = requestUrl.origin
+    
     // Use custom redirect URL if provided, otherwise default
     const emailRedirectTo = redirectTo 
-      ? `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}${redirectTo}`
-      : `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/callback`
+      ? `${origin}${redirectTo}`
+      : `${origin}/auth/callback`
 
     // Send magic link using Supabase Auth
     const { error } = await supabase.auth.signInWithOtp({

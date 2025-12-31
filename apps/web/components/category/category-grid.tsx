@@ -27,8 +27,8 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           {categories.map((category) => {
             const productCount = category._count?.products || 0
-            // Use category image from database (Vercel Blob Storage), fallback to hardcoded map, then placeholder
-            const imageUrl = category.image || categoryImageMap[category.name] || "/placeholder.svg"
+            // Use category image from database (Vercel Blob Storage), fallback to hardcoded map, then logo
+            const imageUrl = category.image || categoryImageMap[category.name] || "/logo.svg"
             
             return (
               <CategoryTile 
@@ -65,7 +65,7 @@ function CategoryTile({
         error: e
       })
       setHasError(true)
-      setImgSrc("/placeholder.svg")
+      setImgSrc("/logo.svg")
     }
   }
 
@@ -77,7 +77,9 @@ function CategoryTile({
             src={imgSrc}
             alt={category.name}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className={`transition-transform duration-300 group-hover:scale-105 ${
+              hasError ? "grayscale opacity-50 object-contain" : "object-cover"
+            }`}
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             quality={85}
             onError={handleError}

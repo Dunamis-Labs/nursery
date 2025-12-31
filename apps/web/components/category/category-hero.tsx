@@ -16,7 +16,7 @@ export function CategoryHero({ name, subheading, image }: CategoryHeroProps) {
   const handleError = () => {
     if (!hasError) {
       setHasError(true)
-      setImgSrc("/placeholder.svg")
+      setImgSrc("/logo.svg")
     }
   }
 
@@ -26,7 +26,7 @@ export function CategoryHero({ name, subheading, image }: CategoryHeroProps) {
         src={imgSrc}
         alt=""
         fill
-        className="object-cover"
+        className={hasError ? "grayscale opacity-50 object-contain" : "object-cover"}
         sizes="100vw"
         priority
         quality={85}

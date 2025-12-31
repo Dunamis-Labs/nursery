@@ -14,13 +14,13 @@ export function ProductImageGallery({ images, name }: ProductImageGalleryProps) 
   const [isZoomed, setIsZoomed] = useState(false)
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({})
 
-  // Get current image with fallback
-  const currentImage = images[selectedImage] || "/placeholder.svg"
+  // Get current image with fallback to logo
+  const currentImage = images[selectedImage] || "/logo.svg"
   const [mainImageSrc, setMainImageSrc] = useState(currentImage)
 
   // Reset main image when selected image changes
   useEffect(() => {
-    setMainImageSrc(images[selectedImage] || "/placeholder.svg")
+    setMainImageSrc(images[selectedImage] || "/logo.svg")
     setImageErrors(prev => {
       const newErrors = { ...prev }
       // Reset error for newly selected image
@@ -32,7 +32,7 @@ export function ProductImageGallery({ images, name }: ProductImageGalleryProps) 
   const handleMainImageError = () => {
     if (!imageErrors[selectedImage]) {
       setImageErrors(prev => ({ ...prev, [selectedImage]: true }))
-      setMainImageSrc("/placeholder.svg")
+      setMainImageSrc("/logo.svg")
     }
   }
 
@@ -48,9 +48,9 @@ export function ProductImageGallery({ images, name }: ProductImageGalleryProps) 
           <img
             src={mainImageSrc}
             alt={`${name} - View ${selectedImage + 1}`}
-            className={`w-full h-full object-cover transition-transform duration-300 ${
-              isZoomed ? "scale-125" : "scale-100"
-            }`}
+            className={`w-full h-full transition-transform duration-300 ${
+              imageErrors[selectedImage] ? "grayscale opacity-50 object-contain" : "object-cover"
+            } ${isZoomed ? "scale-125" : "scale-100"}`}
             onError={handleMainImageError}
           />
           <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -66,7 +66,7 @@ export function ProductImageGallery({ images, name }: ProductImageGalleryProps) 
         {images.map((image, index) => (
           <ThumbnailImage
             key={index}
-            image={image || "/placeholder.svg"}
+            image={image || "/logo.svg"}
             name={name}
             index={index}
             isSelected={selectedImage === index}
@@ -108,14 +108,14 @@ function ThumbnailImage({
     if (!hasError) {
       setImgSrc(image)
     } else {
-      setImgSrc("/placeholder.svg")
+      setImgSrc("/logo.svg")
     }
   }, [image, hasError])
 
   const handleError = () => {
     if (!hasError) {
       onError()
-      setImgSrc("/placeholder.svg")
+      setImgSrc("/logo.svg")
     }
   }
 
@@ -130,7 +130,7 @@ function ThumbnailImage({
         <img
           src={imgSrc}
           alt={`${name} thumbnail ${index + 1}`}
-          className="w-full h-full object-cover"
+          className={`w-full h-full ${hasError ? "grayscale opacity-50 object-contain" : "object-cover"}`}
           onError={handleError}
         />
       </div>

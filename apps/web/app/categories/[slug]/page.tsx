@@ -63,8 +63,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     notFound();
   }
 
-  // Use category image from database (Vercel Blob), then header image map, then tile image map, then placeholder
-  const categoryImage = category.image || categoryHeaderImageMap[category.name] || categoryImageMap[category.name] || '/placeholder.svg';
+  // Use category image from database (Vercel Blob), then header image map, then tile image map, then logo
+  const categoryImage = category.image || categoryHeaderImageMap[category.name] || categoryImageMap[category.name] || '/logo.svg';
 
   // Fetch products for this category with specifications and metadata
   // Use many-to-many relationship (categories) - products can appear in multiple categories

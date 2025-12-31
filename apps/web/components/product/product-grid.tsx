@@ -205,7 +205,7 @@ export function ProductGrid({ products, filters, sortBy, categoryName }: Product
             const localImageUrl = product.imageUrl && !product.imageUrl.includes('plantmark.com.au') 
               ? product.imageUrl 
               : null
-            const imageUrl = localImages[0] || localImageUrl || "/placeholder.svg"
+            const imageUrl = localImages[0] || localImageUrl || "/logo.svg"
             
             return (
               <ProductCard key={product.id} product={product} imageUrl={imageUrl} />
@@ -282,7 +282,7 @@ function ProductCard({
   const handleError = () => {
     if (!hasError) {
       setHasError(true)
-      setImgSrc("/placeholder.svg")
+      setImgSrc("/logo.svg")
     }
   }
 
@@ -294,8 +294,10 @@ function ProductCard({
             src={imgSrc}
             alt={product.name}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            unoptimized={imgSrc.startsWith('/products/')}
+            className={`transition-transform duration-300 group-hover:scale-105 ${
+              hasError ? "grayscale opacity-50 object-contain" : "object-cover"
+            }`}
+            unoptimized={imgSrc.startsWith('/products/') || hasError}
             priority={false}
             onError={handleError}
           />
@@ -318,10 +320,11 @@ function ProductCard({
           <h3 className="font-serif text-lg font-bold text-[#2c2c2c] mb-1">
             {product.commonName || product.name}
           </h3>
-          {product.commonName && product.name && (
+          {/* Hide botanical names for Garden Products category */}
+          {categoryName !== 'Garden Products' && product.commonName && product.name && (
             <p className="font-mono text-sm italic text-[#6b7280] mb-3">{product.name}</p>
           )}
-          {!product.commonName && product.botanicalName && (
+          {categoryName !== 'Garden Products' && !product.commonName && product.botanicalName && (
             <p className="font-mono text-sm italic text-[#6b7280] mb-3">{product.botanicalName}</p>
           )}
           <div className="flex items-center justify-between mb-3">

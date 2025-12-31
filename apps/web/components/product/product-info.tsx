@@ -12,11 +12,13 @@ import { StockNotificationModal } from "./stock-notification-modal"
 interface ProductInfoProps {
   product: Product & {
     category?: { name: string; slug: string } | null
+    categories?: Array<{ category: { name: string; slug: string } }>
     content?: {
       idealFor: string[]
       notIdealFor: string[]
     } | null
   }
+  categoryName?: string // Pass category name to conditionally hide botanical names
 }
 
 // Helper function to parse size and extract numeric value for sorting
@@ -39,7 +41,15 @@ function sortSizes(sizes: string[]): string[] {
   });
 }
 
-export function ProductInfo({ product }: ProductInfoProps) {
+export function ProductInfo({ product, categoryName }: ProductInfoProps) {
+  // Get category name from props, product.categories, or product.category
+  const currentCategoryName = categoryName || 
+    product.categories?.[0]?.category?.name || 
+    product.category?.name || 
+    null
+  
+  // Hide botanical names for Garden Products (they're identical to common names)
+  const shouldHideBotanicalName = currentCategoryName === 'Garden Products'
   const metadata = (product.metadata as Record<string, unknown>) || {}
   const variants = (metadata.variants as Array<{ size?: string; price?: number; availability?: string }>) || []
   
@@ -102,12 +112,12 @@ export function ProductInfo({ product }: ProductInfoProps) {
         <h1 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-2 text-balance">
           {product.commonName || product.name}
         </h1>
-        {product.commonName && product.name && (
+        {!shouldHideBotanicalName && product.commonName && product.name && (
           <p className="font-mono italic text-lg text-muted-foreground">
             {product.name}
           </p>
         )}
-        {!product.commonName && product.botanicalName && (
+        {!shouldHideBotanicalName && !product.commonName && product.botanicalName && (
           <p className="font-mono italic text-lg text-muted-foreground">
             {product.botanicalName}
           </p>

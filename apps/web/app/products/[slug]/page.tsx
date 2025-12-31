@@ -101,10 +101,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
   // Get detailed description from ProductContent, fallback to basic description
   const detailedDescription = product.content?.detailedDescription || product.description || 'No description available.';
   const images = (product.images as string[]) || [];
-  // Use database URLs (Vercel Blob Storage) directly, fallback to placeholder
+  // Use database URLs (Vercel Blob Storage) directly, fallback to logo
   const allImages = images.length > 0 
     ? images 
-    : (product.imageUrl ? [product.imageUrl] : ['/placeholder.svg']);
+    : (product.imageUrl ? [product.imageUrl] : ['/logo.svg']);
 
   // Convert Decimal to number for client components
   // Include content for idealFor/notIdealFor display
@@ -129,7 +129,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
           {/* Product Header Section */}
           <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-8 lg:gap-12 mb-16">
             <ProductImageGallery images={allImages} name={product.name} />
-            <ProductInfo product={productForClient as any} />
+            <ProductInfo 
+              product={productForClient as any} 
+              categoryName={product.categories?.[0]?.category?.name || product.category?.name || undefined}
+            />
           </div>
 
           {/* Product Details Tabs */}
