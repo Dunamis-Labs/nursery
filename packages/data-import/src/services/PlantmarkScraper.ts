@@ -708,6 +708,13 @@ export class PlantmarkScraper {
           
           return null;
         });
+        
+        // Log the total results found for debugging
+        if ((this as any).totalResults) {
+          console.log(`[PlantmarkScraper] Detected total results: ${(this as any).totalResults}`);
+        } else {
+          console.warn(`[PlantmarkScraper] Could not detect total results count, will use fallback pagination detection`);
+        }
       }
       
       const totalResults = (this as any).totalResults;
@@ -720,21 +727,62 @@ export class PlantmarkScraper {
         // Calculate total pages based on total results
         const totalPages = Math.ceil(totalResults / pageSize);
         hasMore = page < totalPages;
+        
+        // Log pagination info for debugging
+        if (page === 1 || page % 10 === 0) {
+          console.log(`[PlantmarkScraper] Page ${page}/${totalPages}, hasMore: ${hasMore}`);
+        }
       } else {
         // Fallback: check for pagination buttons/links
         hasMore = await pageInstance.evaluate(() => {
-          // Look for next page button/link
-          const nextButton = document.querySelector('.pagination .next, [data-next-page], a[href*="pageNumber"], button[class*="next"]');
-          if (nextButton) {
-            const href = nextButton.getAttribute('href') || '';
-            const isDisabled = nextButton.hasAttribute('disabled') || 
-                             nextButton.classList.contains('disabled') ||
-                             nextButton.classList.contains('inactive') ||
-                             nextButton.classList.contains('disabled');
-            return !isDisabled && (href.includes('pageNumber') || nextButton.textContent?.toLowerCase().includes('next'));
+          // Look for next page button/link - try multiple selectors
+          const selectors = [
+            '.pagination .next',
+            '.pagination a[href*="page"]',
+            '[data-next-page]',
+            'a[href*="pageNumber"]',
+            'button[class*="next"]',
+            '.pagination button:not(.disabled)',
+            '.pagination a:not(.disabled)',
+            'a[aria-label*="next" i]',
+            'button[aria-label*="next" i]',
+          ];
+          
+          for (const selector of selectors) {
+            const nextButton = document.querySelector(selector);
+            if (nextButton) {
+              const href = nextButton.getAttribute('href') || '';
+              const isDisabled = nextButton.hasAttribute('disabled') || 
+                               nextButton.classList.contains('disabled') ||
+                               nextButton.classList.contains('inactive') ||
+                               nextButton.getAttribute('aria-disabled') === 'true';
+              
+              // Check if it's actually a next button
+              const isNext = href.includes('page') || 
+                           nextButton.textContent?.toLowerCase().includes('next') ||
+                           nextButton.getAttribute('aria-label')?.toLowerCase().includes('next');
+              
+              if (isNext && !isDisabled) {
+                return true;
+              }
+            }
           }
+          
+          // Also check if current page has products but we're not on the last logical page
+          // If we got products on this page, assume there might be more (conservative approach)
+          const productCards = document.querySelectorAll('[class*="product"], [data-product], .product-card, .product-item');
+          if (productCards.length === pageSize) {
+            // Got a full page of products, likely more pages exist
+            return true;
+          }
+          
           return false;
         });
+        
+        // Log fallback detection result
+        if (page === 1 || page % 10 === 0) {
+          console.log(`[PlantmarkScraper] Page ${page}, fallback hasMore: ${hasMore}, products on page: ${products.length}`);
+        }
       }
 
       return { products, hasMore };

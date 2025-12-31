@@ -55,6 +55,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       name: true,
       slug: true,
       description: true,
+      image: true,
     },
   });
 
@@ -62,8 +63,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     notFound();
   }
 
-  // Use header image if available, otherwise fall back to tile image
-  const categoryImage = categoryHeaderImageMap[category.name] || categoryImageMap[category.name] || '/placeholder.svg';
+  // Use category image from database (Vercel Blob), then header image map, then tile image map, then placeholder
+  const categoryImage = category.image || categoryHeaderImageMap[category.name] || categoryImageMap[category.name] || '/placeholder.svg';
 
   // Fetch products for this category with specifications and metadata
   // Use many-to-many relationship (categories) - products can appear in multiple categories
@@ -130,7 +131,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       <NavigationWrapper />
       <CategoryHero
         name={category.name}
-        description={category.description || `${category.name} plants`}
+        subheading={category.description || `${category.name} plants`}
         image={categoryImage}
       />
       <CategoryContent

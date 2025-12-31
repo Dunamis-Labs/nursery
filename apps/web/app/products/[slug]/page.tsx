@@ -62,7 +62,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const relatedProductsRaw = await prisma.product.findMany({
     where: {
       id: { not: product.id },
-      availability: 'IN_STOCK',
+      // Show all products regardless of availability (since all are out of stock)
       OR: [
         { categoryId: { in: productCategoryIds } }, // Backwards compatibility
         { categories: { some: { categoryId: { in: productCategoryIds } } } }, // Many-to-many

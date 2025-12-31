@@ -182,7 +182,9 @@ export async function GET(request: NextRequest) {
     }
 
     console.log("Redirecting to:", `${next}?verified=true`)
-    const redirectUrl = new URL(`${next}?verified=true`, request.url)
+    // Use the origin from the request to ensure we stay on the same domain (production or local)
+    const origin = requestUrl.origin
+    const redirectUrl = new URL(`${next}?verified=true`, origin)
     const response = NextResponse.redirect(redirectUrl)
     
     // Ensure cookies are set in the response

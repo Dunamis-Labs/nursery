@@ -314,11 +314,6 @@ export function Navigation({ categories = [] }: NavigationProps) {
               >
                 About
               </Link>
-              <Link href="/account">
-                <Button variant="ghost" size="icon" className="hover:bg-[#87a96b]/10">
-                  <User className="h-5 w-5 text-[#2c2c2c]" />
-                </Button>
-              </Link>
             </div>
           </div>
 

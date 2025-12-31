@@ -7,7 +7,7 @@ import { Footer } from '@/components/layout/footer';
 import { MAIN_CATEGORIES } from '@/lib/constants/categories';
 
 export default async function HomePage() {
-  // Fetch only the 15 main categories
+  // Fetch only the 15 main categories - deduplicate by name
   let categories: Array<{
     id: string;
     name: string;
@@ -16,7 +16,7 @@ export default async function HomePage() {
     _count: { products: number };
   }> = [];
   try {
-    categories = await prisma.category.findMany({
+    const allCategories = await prisma.category.findMany({
       where: {
         name: { in: [...MAIN_CATEGORIES] }, // Convert readonly array to mutable
         parentId: null,
@@ -26,6 +26,7 @@ export default async function HomePage() {
         name: true,
         slug: true,
         description: true,
+        image: true,
         _count: {
           select: { products: true },
         },
@@ -34,19 +35,29 @@ export default async function HomePage() {
         name: 'asc',
       },
     });
+    
+    // Deduplicate by name - keep the first occurrence of each category name
+    const seenNames = new Set<string>();
+    categories = allCategories.filter(cat => {
+      if (seenNames.has(cat.name)) {
+        return false;
+      }
+      seenNames.add(cat.name);
+      return true;
+    });
   } catch (error) {
     console.error('Error fetching categories:', error);
     // Continue with empty array if database fails
     categories = [];
   }
 
-  // Fetch featured products (in stock, recently added)
+  // Fetch featured products (all products, recently added - since all are out of stock)
   let featuredProducts: Array<any> = [];
   try {
     const featuredProductsRaw = await prisma.product.findMany({
       take: 8,
       where: {
-        availability: 'IN_STOCK',
+        // Show all products regardless of availability (since all are out of stock)
       },
       include: {
         category: {
