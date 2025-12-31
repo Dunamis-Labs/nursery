@@ -137,7 +137,7 @@ export function SearchBar() {
     setQuery("")
 
     if (result.type === "product") {
-      router.push(`/products/${result.id}`)
+      router.push(`/products/${result.slug}`)
     } else if (result.type === "category") {
       router.push(`/categories/${result.slug}`)
     } else if (result.type === "guide") {

@@ -42,7 +42,7 @@ export function FeaturedProducts({ products }: FeaturedProductsProps) {
               
             return (
               <Card key={product.id} className="flex-shrink-0 w-64 md:w-auto group relative overflow-hidden transition-all hover:shadow-lg border-border">
-                <Link href={`/products/${product.id}`} className="block">
+                <Link href={`/products/${product.slug}`} className="block">
                   <div className="relative aspect-square overflow-hidden">
                     <Image
                       src={imageUrl}

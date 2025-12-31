@@ -288,7 +288,7 @@ function ProductCard({
 
   return (
     <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-md hover:scale-105 border-[#e5e7eb]">
-      <Link href={`/products/${product.id}`} className="block">
+      <Link href={`/products/${product.slug}`} className="block">
         <div className="relative aspect-square overflow-hidden">
           <Image
             src={imgSrc}

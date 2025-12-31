@@ -68,7 +68,7 @@ function RelatedProductCard({
 
   return (
     <Card className="flex-shrink-0 w-64 lg:w-auto group cursor-pointer overflow-hidden transition-all hover:shadow-lg border-border">
-      <Link href={`/products/${product.id}`} className="block">
+      <Link href={`/products/${product.slug}`} className="block">
         <div className="relative aspect-square overflow-hidden bg-muted">
           <img
             src={imgSrc}
@@ -98,7 +98,7 @@ function RelatedProductCard({
               onClick={(e) => {
                 e.stopPropagation()
                 e.preventDefault()
-                window.location.href = `/products/${product.id}`
+                window.location.href = `/products/${product.slug}`
               }}
             >
               View
