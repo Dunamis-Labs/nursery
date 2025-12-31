@@ -10,19 +10,19 @@ import { RelatedProducts } from '@/components/product/related-products';
 
 interface ProductPageProps {
   params: Promise<{
-    id: string;
+    slug: string;
   }>;
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const { id } = await params;
+  const { slug } = await params;
   // Support both old UUID format and new SEO slug format
   // Try to find by slug first (SEO-friendly), then by ID (UUID) for backwards compatibility
   const product = await prisma.product.findFirst({
     where: {
       OR: [
-        { slug: id }, // SEO-friendly slug
-        { id }, // UUID for backwards compatibility
+        { slug }, // SEO-friendly slug
+        { id: slug }, // UUID for backwards compatibility (if slug is actually a UUID)
       ],
     },
     include: {
@@ -30,6 +30,16 @@ export default async function ProductPage({ params }: ProductPageProps) {
         select: {
           name: true,
           slug: true,
+        },
+      },
+      categories: {
+        include: {
+          category: {
+            select: {
+              name: true,
+              slug: true,
+            },
+          },
         },
       },
       content: true, // ProductContent with idealFor, notIdealFor, careInstructions, detailedDescription
@@ -44,12 +54,19 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  // Get related products (same category, limit 5)
+  // Get related products (same categories, limit 5)
+  // Use many-to-many relationship to find products in any of the same categories
+  const productCategoryIds = product.categories?.map(pc => pc.categoryId) || 
+                             (product.categoryId ? [product.categoryId] : []);
+  
   const relatedProductsRaw = await prisma.product.findMany({
     where: {
-      categoryId: product.categoryId,
       id: { not: product.id },
       availability: 'IN_STOCK',
+      OR: [
+        { categoryId: { in: productCategoryIds } }, // Backwards compatibility
+        { categories: { some: { categoryId: { in: productCategoryIds } } } }, // Many-to-many
+      ],
     },
     take: 5,
     include: {
@@ -91,10 +108,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   // Convert Decimal to number for client components
   // Include content for idealFor/notIdealFor display
+  // Include metadata for variants (sizes)
   const productForClient = {
     ...product,
     price: product.price ? Number(product.price) : null,
     content: product.content, // Pass content for idealFor/notIdealFor
+    metadata: product.metadata, // Pass metadata for variants (sizes)
   };
 
   const relatedProducts = relatedProductsRaw.map(p => ({

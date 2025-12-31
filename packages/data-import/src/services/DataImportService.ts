@@ -399,8 +399,45 @@ export class DataImportService {
       downloadedImages = (normalized.images as string[]) || [];
     }
 
-    // Find or create category
-    const category = await this.findOrCreateCategory(normalized.category || 'Uncategorized');
+    // Handle multiple categories - products can belong to multiple categories
+    const categoryNames: string[] = [];
+    
+    // Use categories array if available, otherwise fall back to single category
+    if (normalized.categories && Array.isArray(normalized.categories) && normalized.categories.length > 0) {
+      categoryNames.push(...normalized.categories);
+    } else if (normalized.category) {
+      categoryNames.push(normalized.category);
+    }
+    
+    // Fallback: try to extract from URL if no categories found
+    if (categoryNames.length === 0 && normalized.sourceUrl) {
+      try {
+        const url = new URL(normalized.sourceUrl);
+        const pathParts = url.pathname.split('/').filter(p => p && p !== 'plant-finder');
+        if (pathParts.length > 0) {
+          const categorySlug = pathParts[0];
+          const categoryName = categorySlug.split('-').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+          ).join(' ');
+          categoryNames.push(categoryName);
+          console.log(`  📁 Extracted category from URL: ${categoryName}`);
+        }
+      } catch (e) {
+        // URL parsing failed
+      }
+    }
+    
+    if (categoryNames.length === 0) {
+      throw new Error(`Product "${normalized.name}" has no category. Product detail page must have "plant type" field or categories. URL: ${normalized.sourceUrl}`);
+    }
+    
+    // Find or create all categories
+    const categories = await Promise.all(
+      categoryNames.map(name => this.findOrCreateCategory(name))
+    );
+    
+    // Primary category (first one, for backwards compatibility)
+    const primaryCategory = categories[0];
 
     // Check if product already exists
     const existing = await prisma.product.findFirst({
@@ -423,16 +460,41 @@ export class DataImportService {
       scrapedAt: new Date().toISOString(),
     };
 
+    // Calculate price: 2x the smallest size variant price
+    let calculatedPrice = normalized.price || 0;
+    if (normalized.variants && Array.isArray(normalized.variants) && normalized.variants.length > 0) {
+      // Find smallest size variant with a price
+      const variantsWithPrice = normalized.variants
+        .filter((v: { price?: number }) => v.price && v.price > 0)
+        .sort((a: { price?: number }, b: { price?: number }) => (a.price || 0) - (b.price || 0));
+      
+      if (variantsWithPrice.length > 0) {
+        const smallestVariantPrice = variantsWithPrice[0].price || 0;
+        calculatedPrice = smallestVariantPrice * 2;
+        console.log(`  💰 Price calculated: ${smallestVariantPrice} × 2 = ${calculatedPrice}`);
+      }
+    }
+
+    // Ensure slug is valid (not empty, not UUID-like)
+    let finalSlug = normalized.slug || generateSlug(normalized.name);
+    if (!finalSlug || finalSlug.trim() === '') {
+      finalSlug = generateSlug(normalized.name);
+    }
+    // If slug looks like a UUID, regenerate from name
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(finalSlug)) {
+      finalSlug = generateSlug(normalized.name);
+    }
+
     const productData: Prisma.ProductUncheckedCreateInput = {
       name: normalized.name,
-      slug: normalized.slug || generateSlug(normalized.name),
+      slug: finalSlug,
       description: normalized.description,
       productType: ProductType.PHYSICAL,
-      price: normalized.price ? normalized.price : 0,
+      price: calculatedPrice,
       availability: normalized.availability
         ? (normalized.availability as AvailabilityStatus)
         : AvailabilityStatus.IN_STOCK,
-      categoryId: category.id,
+      categoryId: primaryCategory.id, // Primary category for backwards compatibility
       source: (options?.useApi ?? true) ? ProductSource.API : ProductSource.SCRAPED,
       sourceId: normalized.sourceId || normalized.id,
       sourceUrl: normalized.sourceUrl,
@@ -541,73 +603,154 @@ export class DataImportService {
         hasChanges = true;
       }
 
-      // Update category if changed
-      if (category.id !== existing.categoryId) {
-        updateData.categoryId = category.id;
+      // Update primary category if changed
+      if (primaryCategory.id !== existing.categoryId) {
+        updateData.categoryId = primaryCategory.id;
         hasChanges = true;
+      }
+
+      // Update slug if it's missing, empty, or looks like a UUID (should be SEO-friendly)
+      const currentSlug = existing.slug || '';
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(currentSlug);
+      const needsSlugUpdate = !currentSlug || currentSlug.trim() === '' || isUUID;
+      
+      if (needsSlugUpdate && productData.slug && productData.slug !== currentSlug) {
+        // Check if new slug already exists for another product
+        const slugConflict = await prisma.product.findFirst({
+          where: {
+            slug: productData.slug,
+            id: { not: existing.id },
+          },
+        });
+        
+        if (!slugConflict) {
+          updateData.slug = productData.slug;
+          hasChanges = true;
+        } else {
+          // Slug conflict - append short ID to make it unique
+          const shortId = existing.id.substring(0, 8);
+          updateData.slug = `${productData.slug}-${shortId}`;
+          hasChanges = true;
+        }
       }
 
       if (hasChanges) {
         // Update existing product with merged data
-        await prisma.product.update({
+        const updatedProduct = await prisma.product.update({
           where: { id: existing.id },
           data: updateData,
         });
+        
+        // Update multiple categories (many-to-many)
+        await this.updateProductCategories(updatedProduct.id, categories);
+        
         return { created: false, updated: true };
       } else {
-        // No changes, skip update
+        // Still update categories even if no other changes
+        await this.updateProductCategories(existing.id, categories);
         return { created: false, updated: false };
       }
     } else {
       // Create new product
-      await prisma.product.create({ data: productData });
+      const newProduct = await prisma.product.create({ data: productData });
+      
+      // Add multiple categories (many-to-many)
+      await this.updateProductCategories(newProduct.id, categories);
+      
       return { created: true, updated: false };
     }
   }
 
   /**
-   * Find or create category
+   * Update product categories (many-to-many relationship)
+   */
+  private async updateProductCategories(productId: string, categories: Array<{ id: string }>): Promise<void> {
+    // Delete existing category associations
+    await prisma.productCategory.deleteMany({
+      where: { productId },
+    });
+    
+    // Create new category associations
+    if (categories.length > 0) {
+      await prisma.productCategory.createMany({
+        data: categories.map(cat => ({
+          productId,
+          categoryId: cat.id,
+        })),
+        skipDuplicates: true,
+      });
+    }
+  }
+
+  /**
+   * Use the category directly from the product detail page (plant type)
+   * No mapping - just use what Plantmark provides
+   */
+  private mapToMainCategory(scrapedCategory: string | null): string {
+    if (!scrapedCategory) {
+      throw new Error('Category is required - product detail page should have "plant type" field');
+    }
+    
+    // Just use the category as-is from Plantmark (it should already be one of the 15 main categories)
+    // Trim and normalize case (first letter uppercase, rest lowercase)
+    const trimmed = scrapedCategory.trim();
+    const normalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+    
+    return normalized;
+  }
+
+  /**
+   * Find or create category (only primary categories - no sub-categories)
+   * Uses the category name directly from Plantmark (no mapping)
    */
   private async findOrCreateCategory(name: string) {
-    const slug = generateSlug(name);
+    // Normalize the category name (capitalize first letter)
+    const normalizedName = this.mapToMainCategory(name);
+    const slug = generateSlug(normalizedName);
     
     // Retry logic for database connection issues
-    let retries = 3;
+    const maxRetries = 3;
+    let retries = maxRetries;
     let category = null;
+    let lastError: Error | null = null;
     
     while (retries > 0 && !category) {
       try {
+        // Try to find by exact name first (most reliable)
         category = await prisma.category.findFirst({
-          where: { slug },
+          where: { 
+            name: normalizedName,
+            parentId: null, // Only primary categories
+          },
         });
 
+        // If not found by name, try by slug
         if (!category) {
+          category = await prisma.category.findFirst({
+            where: { 
+              slug,
+              parentId: null,
+            },
+          });
+        }
+
+        if (!category) {
+          // Create primary category (parentId: null)
           category = await prisma.category.create({
             data: {
-              name,
+              name: normalizedName,
               slug,
+              parentId: null, // Explicitly set to null to ensure it's a primary category
             },
           });
         }
         break; // Success, exit retry loop
       } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
         retries--;
         if (retries === 0) {
-          // If all retries failed, create a default category or throw
-          console.warn(`⚠️  Could not find/create category "${name}", using default`);
-          // Try to get or create "Uncategorized" as fallback
-          try {
-            category = await prisma.category.findFirst({
-              where: { slug: 'uncategorized' },
-            }) || await prisma.category.create({
-              data: {
-                name: 'Uncategorized',
-                slug: 'uncategorized',
-              },
-            });
-          } catch (fallbackError) {
-            throw new Error(`Failed to create category after retries: ${error instanceof Error ? error.message : 'Unknown error'}`);
-          }
+          // If all retries failed, throw error - products must have a category
+          throw new Error(`Failed to find/create category "${normalizedName}" after ${maxRetries} retries: ${lastError.message}`);
         } else {
           // Wait before retry (exponential backoff)
           await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));

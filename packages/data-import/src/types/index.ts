@@ -18,7 +18,8 @@ export interface PlantmarkProduct {
   price?: number; // Base/default price (for backward compatibility)
   availability?: 'IN_STOCK' | 'OUT_OF_STOCK' | 'PRE_ORDER' | 'DISCONTINUED'; // Overall availability
   variants?: ProductVariant[]; // Multiple sizes/prices
-  category?: string;
+  category?: string; // Primary category (for backwards compatibility)
+  categories?: string[]; // All categories the product belongs to
   categoryPath?: string[];
   imageUrl?: string;
   images?: string[];

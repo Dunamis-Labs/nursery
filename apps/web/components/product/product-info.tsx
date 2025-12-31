@@ -4,9 +4,10 @@ import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { ShoppingCart, Heart, Share2, Check, X } from "lucide-react"
+import { ShoppingCart, Heart, Share2, Check, X, Bell } from "lucide-react"
 
 import { Product } from "@prisma/client"
+import { StockNotificationModal } from "./stock-notification-modal"
 
 interface ProductInfoProps {
   product: Product & {
@@ -42,6 +43,11 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const metadata = (product.metadata as Record<string, unknown>) || {}
   const variants = (metadata.variants as Array<{ size?: string; price?: number; availability?: string }>) || []
   
+  // Debug: Log variants if they exist
+  if (variants.length > 0) {
+    console.log('Product variants found:', variants);
+  }
+  
   // Extract and sort sizes
   const sizes = useMemo(() => {
     const rawSizes = variants.map(v => v.size || '').filter(Boolean)
@@ -67,7 +73,27 @@ export function ProductInfo({ product }: ProductInfoProps) {
   
   const selectedVariant = variants.find(v => v.size === selectedSize) || variants[0]
   const displayPrice = Number(selectedVariant?.price || product.price || 0)
-  const isInStock = product.availability === 'IN_STOCK' || selectedVariant?.availability === 'IN_STOCK'
+  
+  // Determine availability:
+  // - If variants exist, check the selected variant's availability (or first variant if none selected)
+  // - If no variants, check the product-level availability
+  // - If variant doesn't have explicit availability, fall back to product-level
+  const isInStock = useMemo(() => {
+    if (variants.length > 0) {
+      // If we have variants, check the selected variant's availability
+      const variant = selectedVariant || variants[0]
+      // If variant has explicit availability, use it; otherwise fall back to product-level
+      if (variant?.availability !== undefined) {
+        return variant.availability === 'IN_STOCK'
+      }
+      // Variant exists but no explicit availability - check product-level
+      return product.availability === 'IN_STOCK'
+    }
+    // If no variants, check product-level availability
+    return product.availability === 'IN_STOCK'
+  }, [variants, selectedVariant, product.availability])
+  
+  const [showNotificationModal, setShowNotificationModal] = useState(false)
 
   return (
     <div className="space-y-6">
@@ -76,7 +102,12 @@ export function ProductInfo({ product }: ProductInfoProps) {
         <h1 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-2 text-balance">
           {product.commonName || product.name}
         </h1>
-        {product.botanicalName && (
+        {product.commonName && product.name && (
+          <p className="font-mono italic text-lg text-muted-foreground">
+            {product.name}
+          </p>
+        )}
+        {!product.commonName && product.botanicalName && (
           <p className="font-mono italic text-lg text-muted-foreground">
             {product.botanicalName}
           </p>
@@ -132,14 +163,24 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
       {/* Action Buttons */}
       <div className="space-y-3">
-        <Button
-          size="lg"
-          className="w-full bg-[#2d5016] hover:bg-[#2d5016]/90 text-white font-medium"
-          disabled={!isInStock}
-        >
-          <ShoppingCart className="mr-2 h-5 w-5" />
-          Add to Cart
-        </Button>
+        {isInStock ? (
+          <Button
+            size="lg"
+            className="w-full bg-[#2d5016] hover:bg-[#2d5016]/90 text-white font-medium"
+          >
+            <ShoppingCart className="mr-2 h-5 w-5" />
+            Add to Cart
+          </Button>
+        ) : (
+          <Button
+            size="lg"
+            className="w-full bg-[#3d6b1f] hover:bg-[#3d6b1f]/90 text-white font-medium"
+            onClick={() => setShowNotificationModal(true)}
+          >
+            <Bell className="mr-2 h-5 w-5" />
+            Notify Me When In Stock
+          </Button>
+        )}
 
         <div className="flex gap-3">
           <Button
@@ -211,6 +252,12 @@ export function ProductInfo({ product }: ProductInfoProps) {
           <span className="text-muted-foreground">Expert care support included</span>
         </div>
       </div>
+      
+      <StockNotificationModal
+        product={product}
+        open={showNotificationModal}
+        onOpenChange={setShowNotificationModal}
+      />
     </div>
   )
 }

@@ -1,10 +1,12 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Heart } from "lucide-react"
+import { Heart, Loader2 } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 interface FlowState {
   light: string
@@ -19,121 +21,16 @@ interface PlantFinderResultsProps {
   onRestart: () => void
 }
 
-// Plant database with attributes for matching
-const plantDatabase = [
-  {
-    id: 1,
-    name: "Snake Plant",
-    botanical: "Sansevieria trifasciata",
-    price: 32.99,
-    image: "/snake-plant-sansevieria-pot.jpg",
-    light: ["low", "medium", "bright-indirect"],
-    careLevel: "easiest",
-    petSafe: false,
-    size: ["small", "medium"],
-    benefits: ["alive", "minimal", "air-quality"],
-    reason: "Tolerates low light and missed watering",
-    tags: ["Beginner-friendly", "Low light", "Air-purifying"],
-  },
-  {
-    id: 2,
-    name: "Spider Plant",
-    botanical: "Chlorophytum comosum",
-    price: 22.99,
-    image: "/spider-plant-hanging-pot.jpg",
-    light: ["medium", "bright-indirect"],
-    careLevel: "easiest",
-    petSafe: true,
-    size: ["small"],
-    benefits: ["alive", "minimal", "air-quality"],
-    reason: "Safe for pets and incredibly forgiving",
-    tags: ["Pet-safe", "Beginner-friendly", "Air-purifying"],
-  },
-  {
-    id: 3,
-    name: "Pothos",
-    botanical: "Epipremnum aureum",
-    price: 24.99,
-    image: "/pothos-hanging-plant-pot.jpg",
-    light: ["low", "medium", "bright-indirect"],
-    careLevel: "easiest",
-    petSafe: false,
-    size: ["small", "medium"],
-    benefits: ["alive", "minimal", "air-quality", "texture"],
-    reason: "Thrives in various light conditions with minimal care",
-    tags: ["Beginner-friendly", "Low light", "Fast-growing"],
-  },
-  {
-    id: 4,
-    name: "ZZ Plant",
-    botanical: "Zamioculcas zamiifolia",
-    price: 36.99,
-    image: "/zz-plant-zamioculcas-pot.jpg",
-    light: ["low", "medium", "bright-indirect"],
-    careLevel: "easiest",
-    petSafe: false,
-    size: ["small", "medium"],
-    benefits: ["alive", "minimal"],
-    reason: "Extremely drought-tolerant and low maintenance",
-    tags: ["Beginner-friendly", "Low light", "Drought-tolerant"],
-  },
-  {
-    id: 5,
-    name: "Peace Lily",
-    botanical: "Spathiphyllum",
-    price: 29.99,
-    image: "/peace-lily-white-flower-pot.jpg",
-    light: ["low", "medium"],
-    careLevel: "basic",
-    petSafe: false,
-    size: ["small", "medium"],
-    benefits: ["alive", "air-quality", "texture"],
-    reason: "Blooms indoors and purifies air effectively",
-    tags: ["Flowering", "Air-purifying", "Low light"],
-  },
-  {
-    id: 6,
-    name: "Rubber Plant",
-    botanical: "Ficus elastica",
-    price: 39.99,
-    image: "/rubber-plant-ficus-elastica-pot.jpg",
-    light: ["bright-indirect"],
-    careLevel: "basic",
-    petSafe: false,
-    size: ["medium", "large"],
-    benefits: ["alive", "privacy", "texture"],
-    reason: "Fast-growing with bold glossy foliage",
-    tags: ["Fast-growing", "Statement plant"],
-  },
-  {
-    id: 7,
-    name: "Monstera Deliciosa",
-    botanical: "Monstera deliciosa",
-    price: 45.99,
-    image: "/monstera-deliciosa-full-plant-pot.jpg",
-    light: ["medium", "bright-indirect"],
-    careLevel: "basic",
-    petSafe: false,
-    size: ["medium", "large"],
-    benefits: ["alive", "privacy", "texture"],
-    reason: "Iconic tropical look with easy care requirements",
-    tags: ["Statement plant", "Fast-growing"],
-  },
-  {
-    id: 8,
-    name: "Fiddle Leaf Fig",
-    botanical: "Ficus lyrata",
-    price: 68.99,
-    image: "/fiddle-leaf-fig-tree-pot.jpg",
-    light: ["bright-indirect"],
-    careLevel: "hobby",
-    petSafe: false,
-    size: ["large"],
-    benefits: ["alive", "privacy", "texture"],
-    reason: "Dramatic statement plant with architectural presence",
-    tags: ["Statement plant", "Large"],
-  },
-]
+interface MatchedProduct {
+  id: string
+  slug: string
+  name: string
+  botanical: string
+  price: number | null
+  image: string
+  reason: string
+  tags: string[]
+}
 
 // Canonical decision statements for common scenarios
 const decisionStatements = {
@@ -227,29 +124,40 @@ function getDecisionExplanation(answers: FlowState): { title: string; explanatio
 }
 
 export function PlantFinderResults({ answers, onRestart }: PlantFinderResultsProps) {
-  // Filter plants based on answers
-  const matchedPlants = plantDatabase.filter((plant) => {
-    // Light match
-    if (!plant.light.includes(answers.light)) return false
+  const [matchedPlants, setMatchedPlants] = useState<MatchedProduct[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-    // Care level match (easiest matches all, basic matches basic+hobby, hobby matches hobby)
-    if (answers.careEffort === "easiest" && plant.careLevel !== "easiest") return false
-    if (answers.careEffort === "basic" && plant.careLevel === "hobby") return false
+  useEffect(() => {
+    const fetchMatchingPlants = async () => {
+      setLoading(true)
+      setError(null)
+      
+      try {
+        const response = await fetch("/api/plant-finder", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(answers),
+        })
 
-    // Pet safe filter
-    if (answers.petSafe === "yes" && !plant.petSafe) return false
+        if (!response.ok) {
+          throw new Error("Failed to fetch matching plants")
+        }
 
-    // Size match
-    if (!plant.size.includes(answers.space)) return false
-
-    // Goals match (at least one goal should match)
-    if (answers.goals.length > 0) {
-      const hasMatchingGoal = answers.goals.some((goal) => plant.benefits.includes(goal))
-      if (!hasMatchingGoal) return false
+        const data = await response.json()
+        setMatchedPlants(data.products || [])
+      } catch (err) {
+        console.error("Error fetching matching plants:", err)
+        setError("Failed to load matching plants. Please try again.")
+      } finally {
+        setLoading(false)
+      }
     }
 
-    return true
-  })
+    fetchMatchingPlants()
+  }, [answers])
 
   // Generate summary text
   const getSummaryText = () => {
@@ -291,7 +199,19 @@ export function PlantFinderResults({ answers, onRestart }: PlantFinderResultsPro
           <p className="text-[#2c2c2c] leading-relaxed">{decisionExplanation}</p>
         </Card>
 
-        {matchedPlants.length === 0 ? (
+        {loading ? (
+          <Card className="p-12 text-center border-[#e5e7eb]">
+            <Loader2 className="h-8 w-8 animate-spin text-[#2d5016] mx-auto mb-4" />
+            <p className="text-lg text-[#6b7280]">Finding plants that match your preferences...</p>
+          </Card>
+        ) : error ? (
+          <Card className="p-12 text-center border-[#e5e7eb]">
+            <p className="text-lg text-red-600 mb-6">{error}</p>
+            <Button onClick={onRestart} className="bg-[#2d5016] hover:bg-[#2d5016]/90 text-white">
+              Restart Plant Finder
+            </Button>
+          </Card>
+        ) : matchedPlants.length === 0 ? (
           <Card className="p-12 text-center border-[#e5e7eb]">
             <p className="text-lg text-[#6b7280] mb-6">
               We could not find plants that match all your criteria. Try adjusting your preferences to see more options.
@@ -308,12 +228,14 @@ export function PlantFinderResults({ answers, onRestart }: PlantFinderResultsPro
                   key={plant.id}
                   className="group cursor-pointer overflow-hidden transition-all duration-200 hover:shadow-md hover:scale-105 border-[#e5e7eb]"
                 >
-                  <Link href={`/products/${plant.id}`}>
+                  <Link href={`/products/${plant.slug}`}>
                     <div className="relative aspect-square overflow-hidden">
-                      <img
+                      <Image
                         src={plant.image || "/placeholder.svg"}
                         alt={plant.name}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        unoptimized={plant.image?.startsWith('/products/')}
                       />
                       <Button
                         size="icon"
@@ -336,14 +258,11 @@ export function PlantFinderResults({ answers, onRestart }: PlantFinderResultsPro
                         ))}
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xl font-bold text-[#2d5016]">${plant.price}</span>
-                        <Button
-                          size="sm"
-                          className="bg-[#2d5016] hover:bg-[#2d5016]/90 text-white rounded-md"
-                          onClick={(e) => e.preventDefault()}
-                        >
-                          Add
-                        </Button>
+                        {plant.price ? (
+                          <span className="text-xl font-bold text-[#2d5016]">${plant.price.toFixed(2)}</span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Price on request</span>
+                        )}
                       </div>
                     </div>
                   </Link>

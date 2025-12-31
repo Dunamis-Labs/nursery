@@ -200,8 +200,12 @@ export function ProductGrid({ products, filters, sortBy, categoryName }: Product
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
           {displayedProducts.map((product) => {
             const images = (product.images as string[]) || []
-            // Use database URLs (Vercel Blob Storage) directly, fallback to placeholder
-            const imageUrl = product.imageUrl || images[0] || "/placeholder.svg"
+            // Filter out Plantmark URLs - use local images only or placeholder
+            const localImages = images.filter(img => img && !img.includes('plantmark.com.au'))
+            const localImageUrl = product.imageUrl && !product.imageUrl.includes('plantmark.com.au') 
+              ? product.imageUrl 
+              : null
+            const imageUrl = localImages[0] || localImageUrl || "/placeholder.svg"
             
             return (
               <ProductCard key={product.id} product={product} imageUrl={imageUrl} />
@@ -291,7 +295,7 @@ function ProductCard({
             alt={product.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
-            unoptimized={imgSrc.startsWith('/products/') || imgSrc.startsWith('/categories/')}
+            unoptimized={imgSrc.startsWith('/products/')}
             priority={false}
             onError={handleError}
           />
@@ -311,8 +315,13 @@ function ProductCard({
           </div>
         </div>
         <div className="p-4">
-          <h3 className="font-serif text-lg font-bold text-[#2c2c2c] mb-1">{product.name}</h3>
-          {product.botanicalName && (
+          <h3 className="font-serif text-lg font-bold text-[#2c2c2c] mb-1">
+            {product.commonName || product.name}
+          </h3>
+          {product.commonName && product.name && (
+            <p className="font-mono text-sm italic text-[#6b7280] mb-3">{product.name}</p>
+          )}
+          {!product.commonName && product.botanicalName && (
             <p className="font-mono text-sm italic text-[#6b7280] mb-3">{product.botanicalName}</p>
           )}
           <div className="flex items-center justify-between mb-3">

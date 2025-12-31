@@ -11,13 +11,12 @@ export async function NavigationWrapper() {
     const dbModule = await import('@nursery/db');
     prisma = dbModule.prisma;
   } catch (error: any) {
-    console.error('NavigationWrapper: Failed to import database module:', error);
     return (
       <nav className="sticky top-0 z-50 bg-white border-b border-[#e5e7eb] shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <img src="/logo.svg" alt="The Plant Nursery" className="h-10 w-auto" />
+              <span className="font-serif text-2xl font-bold text-[#2d5016]">The Plant Nursery</span>
             </div>
           </div>
         </div>
@@ -37,30 +36,24 @@ export async function NavigationWrapper() {
         name: true,
         slug: true,
         description: true,
-        content: {
-          select: {
-            navTagline: true,
-          },
-        },
       },
       orderBy: {
         name: 'asc',
       },
     });
-    
-    // Log if no categories found
-    if (categories.length === 0) {
-      console.warn('NavigationWrapper: No categories found in database. Expected categories:', MAIN_CATEGORIES);
-    }
   } catch (dbError: any) {
-    console.error('NavigationWrapper: Failed to fetch categories:', dbError);
-    console.error('NavigationWrapper: Error details:', {
-      message: dbError?.message,
-      code: dbError?.code,
-      stack: dbError?.stack,
-    });
-    // Continue with empty categories array - Navigation component can handle it
-    categories = [];
+    // Return empty navigation if database fails
+    return (
+      <nav className="sticky top-0 z-50 bg-white border-b border-[#e5e7eb] shadow-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-2">
+              <span className="font-serif text-2xl font-bold text-[#2d5016]">The Plant Nursery</span>
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
   }
 
   // Deduplicate by name (keep first occurrence)
@@ -73,14 +66,21 @@ export async function NavigationWrapper() {
     return true;
   });
 
-  // Debug logging (only in development)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('NavigationWrapper: Fetched categories:', uniqueCategories.length);
-    console.log('NavigationWrapper: Category names:', uniqueCategories.map(c => c.name));
+  try {
+    return <Navigation categories={uniqueCategories} />;
+  } catch (error: any) {
+    // Return fallback navigation instead of throwing
+    return (
+      <nav className="sticky top-0 z-50 bg-white border-b border-[#e5e7eb] shadow-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-2">
+              <span className="font-serif text-2xl font-bold text-[#2d5016]">The Plant Nursery</span>
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
   }
-
-  // Always render Navigation component - it can handle empty categories
-  // If Navigation fails, it will be caught by Next.js error boundary
-  return <Navigation categories={uniqueCategories} />;
 }
 

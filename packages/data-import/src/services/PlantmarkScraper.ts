@@ -21,6 +21,7 @@ export class PlantmarkScraper {
   private config: Required<PlantmarkApiConfig>;
   private lastRequestTime: number = 0;
   private browser: any = null; // Puppeteer.Browser or Playwright.Browser
+  private browserContext: any = null; // Puppeteer doesn't use this, Playwright does
 
   private isLoggedIn: boolean = false;
 
@@ -62,12 +63,14 @@ export class PlantmarkScraper {
     try {
       const puppeteer = await dynamicImport('puppeteer');
       this.browser = await puppeteer.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        headless: false, // Headful mode to avoid WAF detection - browser window will be visible
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--start-maximized'],
+        defaultViewport: { width: 1920, height: 1080 },
       });
       (this.browser as any).__isPuppeteer = true;
       // For Puppeteer, browser context is implicit - cookies are shared automatically
       this.browserContext = this.browser;
+      console.log('  🌐 Browser window opened (Puppeteer) - you should see it navigating to pages');
       return;
     } catch (error) {
       // Fall through to Playwright
@@ -78,7 +81,7 @@ export class PlantmarkScraper {
       const playwright = await dynamicImport('playwright');
       const { chromium } = playwright;
       this.browser = await chromium.launch({
-        headless: true,
+        headless: false, // Headful mode to avoid WAF detection - browser window will be visible
       });
       (this.browser as any).__isPlaywright = true;
       // For Playwright, create a persistent context to maintain cookies
@@ -88,6 +91,7 @@ export class PlantmarkScraper {
         // Ensure cookies persist across navigations
         storageState: undefined, // We'll set cookies manually
       });
+      console.log('  🌐 Browser window opened (Playwright) - you should see it navigating to pages');
       return;
     } catch (error) {
       // Continue to error
@@ -361,16 +365,24 @@ export class PlantmarkScraper {
         await pageInstance.setUserAgent(
           'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
         );
-        await pageInstance.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
-        // Wait for prices to potentially load via JavaScript
+        // Use domcontentloaded instead of networkidle (Plantmark uses hash routing which never reaches networkidle)
+        try {
+          await pageInstance.goto(url, { waitUntil: 'domcontentloaded', timeout: 120000 });
+        } catch (error) {
+          // Retry with load event
+          console.warn(`  ⚠️  First navigation attempt failed, retrying...`);
+          await pageInstance.goto(url, { waitUntil: 'load', timeout: 120000 });
+        }
+        // Wait for content to load (Plantmark uses JavaScript to render products)
         await new Promise(resolve => setTimeout(resolve, 5000));
         // Try to wait for selector, but don't fail if it takes too long
         try {
           await pageInstance.waitForSelector('div[data-productid], .product-item[data-productid]', {
-            timeout: 10000,
+            timeout: 15000,
           });
         } catch {
           // Continue anyway - products might already be loaded
+          console.warn(`  ⚠️  Product selector not found, continuing anyway...`);
         }
       } else {
         // Playwright API
@@ -378,16 +390,24 @@ export class PlantmarkScraper {
         await pageInstance.setExtraHTTPHeaders({
           'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
         });
-        await pageInstance.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
-        // Wait for prices to potentially load via JavaScript/AJAX
+        // Use domcontentloaded instead of networkidle (Plantmark uses hash routing which never reaches networkidle)
+        try {
+          await pageInstance.goto(url, { waitUntil: 'domcontentloaded', timeout: 120000 });
+        } catch (error) {
+          // Retry with load event
+          console.warn(`  ⚠️  First navigation attempt failed, retrying...`);
+          await pageInstance.goto(url, { waitUntil: 'load', timeout: 120000 });
+        }
+        // Wait for content to load (Plantmark uses JavaScript to render products)
         await new Promise(resolve => setTimeout(resolve, 5000));
         // Try to wait for selector, but don't fail if it takes too long
         try {
           await pageInstance.waitForSelector('div[data-productid], .product-item[data-productid]', {
-            timeout: 10000,
+            timeout: 15000,
           });
         } catch {
           // Continue anyway - products might already be loaded
+          console.warn(`  ⚠️  Product selector not found, continuing anyway...`);
         }
       }
       
@@ -407,69 +427,19 @@ export class PlantmarkScraper {
         }
       }
 
-      // Extract category from the page (breadcrumbs, page title, or URL)
-      // Also use the category parameter if provided, or extract from URL
+      // Note: Category information is NOT on the listing page - it's on individual product detail pages
+      // We'll extract category when scraping each product's detail page
+      // Only use category parameter if explicitly provided
       let pageCategory: string | null = null;
       
-      // First, try to use the category parameter if provided
       if (category) {
         // Convert slug to readable name (e.g., "trees" -> "Trees")
         pageCategory = category.split('-').map(word => 
           word.charAt(0).toUpperCase() + word.slice(1)
         ).join(' ');
         console.log(`   📁 Using category parameter: "${pageCategory}"`);
-      } else {
-        // Extract from page
-        pageCategory = await pageInstance.evaluate(() => {
-          // Try breadcrumbs first
-          const breadcrumbs = document.querySelectorAll('.breadcrumb a, .breadcrumbs a, nav[aria-label="breadcrumb"] a, [class*="breadcrumb"] a');
-          if (breadcrumbs.length > 1) {
-            // Usually second-to-last breadcrumb is the category
-            const categoryLink = Array.from(breadcrumbs)[breadcrumbs.length - 2] as HTMLElement;
-            if (categoryLink) {
-              const categoryText = categoryLink.textContent?.trim();
-              if (categoryText && categoryText.toLowerCase() !== 'home' && categoryText.toLowerCase() !== 'plant finder') {
-                return categoryText;
-              }
-            }
-          }
-          
-          // Try page title/heading
-          const pageTitle = document.querySelector('h1, .page-title, [class*="category"] h1');
-          if (pageTitle) {
-            const titleText = pageTitle.textContent?.trim();
-            if (titleText && !titleText.toLowerCase().includes('plant finder')) {
-              return titleText;
-            }
-          }
-          
-          // Try URL path (this should work even with hash)
-          const pathParts = window.location.pathname.split('/').filter(p => p);
-          if (pathParts.length > 0 && pathParts[0] !== 'plant-finder') {
-            // Convert slug to readable name (e.g., "trees" -> "Trees")
-            const categorySlug = pathParts[0];
-            return categorySlug.split('-').map(word => 
-              word.charAt(0).toUpperCase() + word.slice(1)
-            ).join(' ');
-          }
-          
-          return null;
-        });
-        
-        // Log extracted category for debugging
-        if (pageCategory) {
-          console.log(`   📁 Extracted category from page: "${pageCategory}"`);
-        } else {
-          console.log(`   ⚠️  Could not extract category from page`);
-        }
       }
-
-      // Log extracted category for debugging
-      if (pageCategory) {
-        console.log(`   📁 Extracted category from page: "${pageCategory}"`);
-      } else {
-        console.log(`   ⚠️  Could not extract category from page`);
-      }
+      // Don't try to extract category from listing page - it's not reliable there
 
       // Extract product data based on actual Plantmark structure
       // Plantmark uses div-based structure: ._ProductBoxWithLocation with columns
@@ -601,7 +571,7 @@ export class PlantmarkScraper {
           const product = productMap.get(productId);
           variants.forEach(variant => {
             // Avoid duplicates
-            if (!product.variants.find(v => v.id === variant.id)) {
+            if (!product.variants.find((v: any) => v.id === variant.id)) {
               product.variants.push(variant);
             }
           });
@@ -792,13 +762,35 @@ export class PlantmarkScraper {
     try {
       const isPuppeteer = (this.browser as any).__isPuppeteer;
       
+      console.log(`  🌐 Navigating to product detail page: ${fullUrl}`);
+      
       if (isPuppeteer) {
-        await pageInstance.goto(fullUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await pageInstance.setViewport({ width: 1920, height: 1080 });
+        await pageInstance.setUserAgent(
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+        );
+        try {
+          await pageInstance.goto(fullUrl, { waitUntil: 'domcontentloaded', timeout: 120000 });
+        } catch (error) {
+          console.warn(`  ⚠️  First navigation attempt failed, retrying...`);
+          await pageInstance.goto(fullUrl, { waitUntil: 'load', timeout: 120000 });
+        }
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for page to fully render
       } else {
-        await pageInstance.goto(fullUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await pageInstance.setViewportSize({ width: 1920, height: 1080 });
+        await pageInstance.setExtraHTTPHeaders({
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+        });
+        try {
+          await pageInstance.goto(fullUrl, { waitUntil: 'domcontentloaded', timeout: 120000 });
+        } catch (error) {
+          console.warn(`  ⚠️  First navigation attempt failed, retrying...`);
+          await pageInstance.goto(fullUrl, { waitUntil: 'load', timeout: 120000 });
+        }
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for page to fully render
       }
+      
+      console.log(`  ✅ Page loaded, extracting product details...`);
       
       // If logged in, try clicking on variants to reveal prices (prices might be loaded dynamically)
       if (this.isLoggedIn) {
@@ -840,48 +832,35 @@ export class PlantmarkScraper {
 
       // Extract product details - improved for Plantmark's actual structure
       // Load the scraping code from a separate JS file to avoid TypeScript compilation issues
-      let scrapeCode: string;
+      let scrapeCode: string = '';
       try {
-      const fs = await import('fs');
-      const path = await import('path');
-      const { fileURLToPath } = await import('url');
-      const { dirname } = path;
-      const __filename = fileURLToPath(import.meta.url);
-      const __dirname = dirname(__filename);
-      
-      const scrapeCodePath = path.join(__dirname, 'scrapeProductDetailCode.js');
-        scrapeCode = fs.readFileSync(scrapeCodePath, 'utf-8');
-      } catch (fileError) {
-        // Fallback: try to read from package directory
-        try {
-          const fs = await import('fs');
-          const path = await import('path');
-          // Try multiple possible paths
-          const possiblePaths = [
-            path.join(process.cwd(), 'packages/data-import/src/services/scrapeProductDetailCode.js'),
-            path.join(process.cwd(), 'node_modules/@nursery/data-import/src/services/scrapeProductDetailCode.js'),
-            path.join(process.cwd(), 'node_modules/@nursery/data-import/dist/services/scrapeProductDetailCode.js'),
-          ];
-          
-          let found = false;
-          for (const possiblePath of possiblePaths) {
-            try {
-              if (fs.existsSync(possiblePath)) {
-                scrapeCode = fs.readFileSync(possiblePath, 'utf-8');
-                found = true;
-                break;
-              }
-            } catch (e) {
-              // Continue to next path
+        const fs = await import('fs');
+        const path = await import('path');
+        // Try multiple possible paths (avoid import.meta which requires ES modules)
+        const possiblePaths = [
+          path.join(process.cwd(), 'packages/data-import/src/services/scrapeProductDetailCode.js'),
+          path.join(process.cwd(), 'node_modules/@nursery/data-import/src/services/scrapeProductDetailCode.js'),
+          path.join(process.cwd(), 'node_modules/@nursery/data-import/dist/services/scrapeProductDetailCode.js'),
+        ];
+        
+        let found = false;
+        for (const possiblePath of possiblePaths) {
+          try {
+            if (fs.existsSync(possiblePath)) {
+              scrapeCode = fs.readFileSync(possiblePath, 'utf-8');
+              found = true;
+              break;
             }
+          } catch (e) {
+            // Continue to next path
           }
-          
-          if (!found) {
-            throw new Error(`Could not find scrapeProductDetailCode.js. Tried: ${possiblePaths.join(', ')}. Original error: ${fileError instanceof Error ? fileError.message : String(fileError)}`);
-          }
-        } catch (fallbackError) {
-          throw new Error(`Failed to load scrape code: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
         }
+        
+        if (!found) {
+          throw new Error(`Could not find scrapeProductDetailCode.js. Tried: ${possiblePaths.join(', ')}`);
+        }
+      } catch (fileError) {
+        throw new Error(`Failed to load scrape code: ${fileError instanceof Error ? fileError.message : String(fileError)}`);
       }
       
       // Extract just the function body (remove function declaration wrapper and closing brace)

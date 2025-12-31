@@ -92,37 +92,62 @@ function scrapeProductDetail() {
     }
   }
   
-  // Extract category from breadcrumbs or URL
-  let category = null;
-  const breadcrumbs = document.querySelectorAll('.breadcrumb a, .breadcrumbs a, nav[aria-label="breadcrumb"] a, [class*="breadcrumb"] a');
-  if (breadcrumbs.length > 1) {
-    // Usually second-to-last breadcrumb is the category (skip Home and Plant Finder)
-    const breadcrumbArray = Array.from(breadcrumbs);
-    // Find the last breadcrumb that's not "Home" or "Plant Finder"
-    for (let i = breadcrumbArray.length - 1; i >= 0; i--) {
-      const breadcrumbText = breadcrumbArray[i].textContent?.trim() || '';
-      const lowerText = breadcrumbText.toLowerCase();
-      if (lowerText !== 'home' && lowerText !== 'plant finder' && lowerText !== '') {
-        category = breadcrumbText;
-        break;
+  // Extract ALL categories - products can appear in multiple categories
+  // Look for category links, breadcrumbs, or category tags on the page
+  const categories = [];
+  const seenCategories = new Set();
+  
+  // Method 1: Look for category links/tags on the product page
+  const categoryLinks = document.querySelectorAll('a[href*="/category"], a[href*="/plant-finder"], .category a, [class*="category"] a, [data-category]');
+  categoryLinks.forEach(link => {
+    const text = link.textContent?.trim() || '';
+    const href = link.getAttribute('href') || '';
+    if (text && text.length > 0 && text.toLowerCase() !== 'home' && text.toLowerCase() !== 'plant finder') {
+      const normalized = text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+      if (!seenCategories.has(normalized)) {
+        categories.push(normalized);
+        seenCategories.add(normalized);
       }
+    }
+  });
+  
+  // Method 2: Extract from breadcrumbs (all categories in breadcrumb path)
+  const breadcrumbs = document.querySelectorAll('.breadcrumb a, .breadcrumbs a, nav[aria-label="breadcrumb"] a, [class*="breadcrumb"] a');
+  breadcrumbs.forEach(breadcrumb => {
+    const text = breadcrumb.textContent?.trim() || '';
+    const lowerText = text.toLowerCase();
+    if (lowerText !== 'home' && lowerText !== 'plant finder' && lowerText !== '' && text.length > 0) {
+      const normalized = text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+      if (!seenCategories.has(normalized)) {
+        categories.push(normalized);
+        seenCategories.add(normalized);
+      }
+    }
+  });
+  
+  // Method 3: Use Plant Type as primary category (if not already in list)
+  if (plantType) {
+    const normalized = plantType.trim().charAt(0).toUpperCase() + plantType.trim().slice(1).toLowerCase();
+    if (!seenCategories.has(normalized)) {
+      categories.unshift(normalized); // Add to front as primary
+      seenCategories.add(normalized);
     }
   }
   
-  // Fallback: try URL path (but only if we didn't find a valid breadcrumb)
-  if (!category) {
-    const urlParts = window.location.pathname.split('/').filter(p => p);
-    // Skip the product slug (last part) and look for category
-    if (urlParts.length > 1) {
-      // Category is usually the first part after domain
+  // Fallback: Extract from URL path if no categories found
+  if (categories.length === 0) {
+    const urlParts = window.location.pathname.split('/').filter(p => p && p !== 'plant-finder');
+    if (urlParts.length > 0) {
       const categorySlug = urlParts[0];
-      if (categorySlug !== 'plant-finder') {
-        category = categorySlug.split('-').map(word => 
-          word.charAt(0).toUpperCase() + word.slice(1)
-        ).join(' ');
-      }
+      const categoryName = categorySlug.split('-').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ');
+      categories.push(categoryName);
     }
   }
+  
+  // Use first category as primary (for backwards compatibility)
+  const category = categories.length > 0 ? categories[0] : null;
 
   // Extract product ID from URL or page
   const urlParts = window.location.pathname.split('/');
@@ -199,9 +224,10 @@ function scrapeProductDetail() {
     const img = allProductImages[i];
     let src = img.getAttribute('src') || img.getAttribute('data-src') || img.getAttribute('data-lazy-src') || img.getAttribute('data-lazyloadsrc') || img.getAttribute('data-original') || '';
     
-    // Skip placeholder images, logos, banners
+    // Skip placeholder images, logos, banners, default images
     if (src.includes('data:image') || src.includes('placeholder') || src.includes('blank') || 
-        src.includes('logo') || src.includes('banner') || src.includes('web thin banner')) continue;
+        src.includes('logo') || src.includes('banner') || src.includes('web thin banner') ||
+        src.includes('default-image') || src.includes('default_image') || src.includes('no-image')) continue;
     
     const fullQualitySrc = getFullQualityImageUrl(src);
     if (fullQualitySrc && !seenImages.has(fullQualitySrc)) {
@@ -233,7 +259,8 @@ function scrapeProductDetail() {
       const img = additionalImages[i];
       let src = img.getAttribute('src') || img.getAttribute('data-src') || '';
       
-      if (src && !src.includes('placeholder') && !src.includes('logo') && !src.includes('banner')) {
+      if (src && !src.includes('placeholder') && !src.includes('logo') && !src.includes('banner') &&
+          !src.includes('default-image') && !src.includes('default_image') && !src.includes('no-image')) {
         const fullQualitySrc = getFullQualityImageUrl(src);
         if (fullQualitySrc && !seenImages.has(fullQualitySrc)) {
           seenImages.add(fullQualitySrc);
@@ -259,7 +286,10 @@ function scrapeProductDetail() {
           src.includes('logo') || 
           src.includes('banner') ||
           src.includes('icon') ||
-          src.includes('sprite')) {
+          src.includes('sprite') ||
+          src.includes('default-image') ||
+          src.includes('default_image') ||
+          src.includes('no-image')) {
         continue;
       }
       
@@ -1024,7 +1054,8 @@ function scrapeProductDetail() {
     images: images.length > 0 ? images : undefined,
     sourceUrl: window.location.href,
     sourceId: productId || slug,
-    category: category || undefined,
+    category: category || undefined, // Primary category (for backwards compatibility)
+    categories: categories.length > 0 ? categories : undefined, // All categories
     specifications: Object.keys(specifications).length > 0 ? specifications : undefined,
     careInstructions: careInstructions || undefined,
     plantingInstructions: plantingInstructions || undefined,

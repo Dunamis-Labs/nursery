@@ -68,6 +68,13 @@ const createPrismaClient = () => {
       },
     },
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    // Add connection pool configuration for better reliability
+    // This helps with Supabase pooler connections
+    __internal: {
+      engine: {
+        connectTimeout: 10000, // 10 second connection timeout
+      },
+    },
   });
 };
 

@@ -33,8 +33,12 @@ export function FeaturedProducts({ products }: FeaturedProductsProps) {
           <div className="flex gap-6 min-w-max md:min-w-0 md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
             {products.map((product) => {
               const images = (product.images as string[]) || []
-              // Use database URLs (Vercel Blob Storage) directly, fallback to placeholder
-              const imageUrl = product.imageUrl || images[0] || "/placeholder.svg"
+              // Filter out Plantmark URLs - use local images only or placeholder
+              const localImages = images.filter(img => !img.includes('plantmark.com.au'))
+              const localImageUrl = product.imageUrl && !product.imageUrl.includes('plantmark.com.au') 
+                ? product.imageUrl 
+                : null
+              const imageUrl = localImages[0] || localImageUrl || "/placeholder.svg"
               
             return (
               <Card key={product.id} className="flex-shrink-0 w-64 md:w-auto group relative overflow-hidden transition-all hover:shadow-lg border-border">
@@ -44,9 +48,8 @@ export function FeaturedProducts({ products }: FeaturedProductsProps) {
                       src={imageUrl}
                       alt={product.name}
                       fill
-                      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      unoptimized={imageUrl.startsWith('/products/') || imageUrl.startsWith('/categories/')}
+                      unoptimized={imageUrl.startsWith('/products/')}
                     />
                     <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       <Button
@@ -64,8 +67,13 @@ export function FeaturedProducts({ products }: FeaturedProductsProps) {
                     </div>
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-base mb-1">{product.name}</h3>
-                    {product.botanicalName && (
+                    <h3 className="font-semibold text-base mb-1">
+                      {product.commonName || product.name}
+                    </h3>
+                    {product.commonName && product.name && (
+                      <p className="text-sm font-mono italic text-muted-foreground mb-3">{product.name}</p>
+                    )}
+                    {!product.commonName && product.botanicalName && (
                       <p className="text-sm font-mono italic text-muted-foreground mb-3">{product.botanicalName}</p>
                     )}
                     <div className="flex items-center justify-between mb-3">

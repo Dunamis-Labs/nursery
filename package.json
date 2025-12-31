@@ -23,8 +23,10 @@
     "inspect:plantmark": "tsx scripts/inspect-plantmark-page.ts",
     "test:scraper": "tsx scripts/test-plantmark-scraper.ts",
     "import:full": "dotenv -e .env -- tsx scripts/full-plantmark-import.ts",
+    "verify:plantmark": "dotenv -e .env -- tsx scripts/comprehensive-plantmark-verification.ts",
     "download:images": "tsx scripts/download-product-images.ts",
     "fix:categories": "tsx scripts/fix-categories.ts",
+    "set:out-of-stock": "dotenv -e .env -- tsx scripts/set-all-products-out-of-stock.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\""
   },

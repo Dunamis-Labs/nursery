@@ -31,20 +31,11 @@ import {
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import { Category } from "@prisma/client"
 import { SearchBar } from "@/components/search/search-bar"
 
-type NavCategoryInput = {
-  id: string
-  name: string
-  slug: string
-  description: string | null
-  content?: {
-    navTagline?: string | null
-  } | null
-}
-
 interface NavigationProps {
-  categories?: NavCategoryInput[]
+  categories?: Category[]
 }
 
 // Comprehensive icon mapping for all 15 Plantmark categories
@@ -95,22 +86,10 @@ export function Navigation({ categories = [] }: NavigationProps) {
       name: cat.name,
       slug: cat.slug,
       image: "/placeholder.svg", // TODO: Add image field to Category model
-      description: (() => {
-        const candidate = cat.content?.navTagline || cat.description || `${cat.name} plants`
-        return candidate.length > 28 ? `${candidate.slice(0, 27)}…` : candidate
-      })(),
+      description: `${cat.name} plants`,
       icon: categoryIcons[cat.name] || Leaf,
     }))
     .sort((a, b) => a.name.localeCompare(b.name))
-
-  // Debug logging
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Navigation: Received categories:', categories.length)
-      console.log('Navigation: navCategories:', navCategories.length)
-      console.log('Navigation: Category names:', navCategories.map(c => c.name))
-    }
-  }, [categories, navCategories])
 
   // Don't render Sheet/Dialog on server to avoid Context Provider issues
   if (!mounted) {
@@ -127,22 +106,22 @@ export function Navigation({ categories = [] }: NavigationProps) {
               </Link>
             </div>
             <div className="hidden lg:flex items-center gap-6">
-              <Link href="/plant-finder" prefetch={false} className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Plant Finder</Link>
-              <Link href="/plant-care" prefetch={false} className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Plant Care</Link>
-              <Link href="/guides" prefetch={false} className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Guides</Link>
-              <Link href="/blog" prefetch={false} className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Blog</Link>
-              <Link href="/about" prefetch={false} className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">About</Link>
+              <Link href="/plant-finder" className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Plant Finder</Link>
+              <Link href="/plant-care" className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Plant Care</Link>
+              <Link href="/guides" className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Guides</Link>
+              <Link href="/blog" className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">Blog</Link>
+              <Link href="/about" className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2">About</Link>
             </div>
             <div className="flex items-center gap-4">
               <button className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors" aria-label="Search">
                 <Search className="h-5 w-5" />
               </button>
-              <Link href="/account" prefetch={false} aria-label="Account">
+              <Link href="/account" aria-label="Account">
                 <Button variant="ghost" size="icon" className="hover:bg-[#87a96b]/10">
                   <User className="h-5 w-5 text-[#2c2c2c]" />
                 </Button>
               </Link>
-              <Link href="/cart" prefetch={false} aria-label="Cart">
+              <Link href="/cart" aria-label="Cart">
                 <Button variant="ghost" size="icon" className="hover:bg-[#87a96b]/10">
                   <ShoppingCart className="h-5 w-5 text-[#2c2c2c]" />
                 </Button>
@@ -213,7 +192,6 @@ export function Navigation({ categories = [] }: NavigationProps) {
                     <div className="border-t border-[#e5e7eb] mt-2 pt-2 flex flex-col gap-1">
                       <Link
                         href="/plant-finder"
-                        prefetch={false}
                         className="flex items-center gap-3 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-[#87a96b]/10 hover:text-[#2d5016] transition-all rounded-lg mx-2"
                         onClick={() => setOpen(false)}
                       >
@@ -222,7 +200,6 @@ export function Navigation({ categories = [] }: NavigationProps) {
                       </Link>
                       <Link
                         href="/plant-care"
-                        prefetch={false}
                         className="flex items-center gap-3 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-[#87a96b]/10 hover:text-[#2d5016] transition-all rounded-lg mx-2"
                         onClick={() => setOpen(false)}
                       >
@@ -231,7 +208,6 @@ export function Navigation({ categories = [] }: NavigationProps) {
                       </Link>
                       <Link
                         href="/guides"
-                        prefetch={false}
                         className="flex items-center gap-3 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-[#87a96b]/10 hover:text-[#2d5016] transition-all rounded-lg mx-2"
                         onClick={() => setOpen(false)}
                       >
@@ -240,7 +216,6 @@ export function Navigation({ categories = [] }: NavigationProps) {
                       </Link>
                       <Link
                         href="/blog"
-                        prefetch={false}
                         className="flex items-center gap-3 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-[#87a96b]/10 hover:text-[#2d5016] transition-all rounded-lg mx-2"
                         onClick={() => setOpen(false)}
                       >
@@ -249,7 +224,6 @@ export function Navigation({ categories = [] }: NavigationProps) {
                       </Link>
                       <Link
                         href="/about"
-                        prefetch={false}
                         className="flex items-center gap-3 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-[#87a96b]/10 hover:text-[#2d5016] transition-all rounded-lg mx-2"
                         onClick={() => setOpen(false)}
                       >
@@ -258,7 +232,6 @@ export function Navigation({ categories = [] }: NavigationProps) {
                       </Link>
                       <Link
                         href="/account"
-                        prefetch={false}
                         className="flex items-center gap-3 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-[#87a96b]/10 hover:text-[#2d5016] transition-all rounded-lg mx-2"
                         onClick={() => setOpen(false)}
                       >
@@ -277,80 +250,71 @@ export function Navigation({ categories = [] }: NavigationProps) {
             </Link>
 
             <div className="hidden lg:flex items-center gap-6">
-              {navCategories.length > 0 && (
-                <>
-                  <div className="group relative">
-                    <button className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors flex items-center gap-1 py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300">
-                      Categories
-                      <ChevronDown className="h-4 w-4" />
-                    </button>
+              <div className="group relative">
+                <button className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors flex items-center gap-1 py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300">
+                  Categories
+                  <ChevronDown className="h-4 w-4" />
+                </button>
 
-                    <div className="absolute top-full left-0 mt-2 w-[900px] max-h-[600px] overflow-y-auto bg-white border border-[#e5e7eb] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-50">
-                      <div className="p-6">
-                        <div className="grid grid-cols-3 gap-3">
-                          {navCategories.map((category) => {
-                            const Icon = category.icon;
-                            return (
-                              <Link
-                                key={category.slug}
-                                href={`/categories/${category.slug}`}
-                                className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#87a96b]/10 transition-colors group/item"
-                              >
-                                <div className="w-12 h-12 rounded-md bg-[#87a96b]/20 flex items-center justify-center flex-shrink-0 group-hover/item:bg-[#2d5016] transition-colors">
-                                  <Icon className="h-6 w-6 text-[#2d5016] group-hover/item:text-white transition-colors" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <div className="text-sm font-semibold text-[#2c2c2c] group-hover/item:text-[#2d5016] transition-colors truncate">
-                                    {category.name}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground truncate">{category.description}</div>
-                                </div>
-                              </Link>
-                            )
-                          })}
-                        </div>
-                      </div>
+                <div className="absolute top-full left-0 mt-2 w-[900px] max-h-[600px] overflow-y-auto bg-white border border-[#e5e7eb] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-50">
+                  <div className="p-6">
+                    <div className="grid grid-cols-3 gap-3">
+                      {navCategories.map((category) => {
+                        const Icon = category.icon;
+                        return (
+                          <Link
+                            key={category.slug}
+                            href={`/categories/${category.slug}`}
+                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#87a96b]/10 transition-colors group/item"
+                          >
+                            <div className="w-12 h-12 rounded-md bg-[#87a96b]/20 flex items-center justify-center flex-shrink-0 group-hover/item:bg-[#2d5016] transition-colors">
+                              <Icon className="h-6 w-6 text-[#2d5016] group-hover/item:text-white transition-colors" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-semibold text-[#2c2c2c] group-hover/item:text-[#2d5016] transition-colors truncate">
+                                {category.name}
+                              </div>
+                              <div className="text-xs text-muted-foreground truncate">{category.description}</div>
+                            </div>
+                          </Link>
+                        )
+                      })}
                     </div>
                   </div>
-                </>
-              )}
+                </div>
+              </div>
 
               <Link
                 href="/plant-finder"
-                prefetch={false}
                 className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300"
               >
                 Plant Finder
               </Link>
               <Link
                 href="/plant-care"
-                prefetch={false}
                 className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300"
               >
                 Plant Care
               </Link>
               <Link
                 href="/guides"
-                prefetch={false}
                 className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300"
               >
                 Guides
               </Link>
               <Link
                 href="/blog"
-                prefetch={false}
                 className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300"
               >
                 Blog
               </Link>
               <Link
                 href="/about"
-                prefetch={false}
                 className="text-sm font-medium text-[#2c2c2c] hover:text-[#2d5016] transition-colors py-2 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2d5016] hover:after:w-full after:transition-all after:duration-300"
               >
                 About
               </Link>
-              <Link href="/account" prefetch={false}>
+              <Link href="/account">
                 <Button variant="ghost" size="icon" className="hover:bg-[#87a96b]/10">
                   <User className="h-5 w-5 text-[#2c2c2c]" />
                 </Button>
@@ -360,17 +324,14 @@ export function Navigation({ categories = [] }: NavigationProps) {
 
           <div className="flex items-center gap-4">
             <SearchBar />
-            <Link href="/account" prefetch={false}>
+            <Link href="/account">
               <Button variant="ghost" size="icon" className="hover:bg-[#87a96b]/10">
                 <User className="h-5 w-5 text-[#2c2c2c]" />
               </Button>
             </Link>
-            <Link href="/cart" prefetch={false}>
-              <Button variant="ghost" size="icon" className="relative hover:bg-[#87a96b]/10">
+            <Link href="/cart">
+              <Button variant="ghost" size="icon" className="hover:bg-[#87a96b]/10">
                 <ShoppingCart className="h-5 w-5 text-[#2c2c2c]" />
-                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-[#2d5016] text-white text-xs flex items-center justify-center font-medium">
-                  2
-                </span>
               </Button>
             </Link>
           </div>

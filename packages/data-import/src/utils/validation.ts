@@ -63,9 +63,29 @@ export function generateSlug(name: string): string {
  * Normalize product data for database storage
  */
 export function normalizeProduct(product: PlantmarkProduct): PlantmarkProduct {
+  // Prefer slug from URL if available (more SEO-friendly and matches Plantmark)
+  // Extract slug from sourceUrl if slug is not provided
+  let finalSlug = product.slug;
+  if (!finalSlug && product.sourceUrl) {
+    try {
+      const url = new URL(product.sourceUrl);
+      const pathParts = url.pathname.split('/').filter(p => p && p !== 'plant-finder');
+      if (pathParts.length > 0) {
+        finalSlug = pathParts[pathParts.length - 1]; // Last part of URL path
+      }
+    } catch (e) {
+      // URL parsing failed, fall back to name
+    }
+  }
+  
+  // Fall back to generating from name if still no slug
+  if (!finalSlug) {
+    finalSlug = generateSlug(product.name);
+  }
+
   return {
     ...product,
-    slug: product.slug || generateSlug(product.name),
+    slug: finalSlug,
     name: product.name.trim(),
     description: product.description?.trim(),
     botanicalName: product.botanicalName?.trim(),

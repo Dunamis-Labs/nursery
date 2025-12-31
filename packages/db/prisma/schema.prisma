@@ -69,8 +69,9 @@ model Product {
   productType     ProductType
   price           Decimal           @db.Decimal(10, 2)
   availability    AvailabilityStatus @default(IN_STOCK)
-  categoryId      String
-  category        Category          @relation(fields: [categoryId], references: [id])
+  categoryId      String?           // Keep for backwards compatibility, but prefer categories relation
+  category        Category?         @relation("ProductPrimaryCategory", fields: [categoryId], references: [id])
+  categories      ProductCategory[] // Many-to-many relationship
   source          ProductSource     @default(MANUAL)
   sourceId        String?           // External ID from source (e.g., plantmark.com.au)
   sourceUrl       String?
@@ -82,6 +83,7 @@ model Product {
   content         ProductContent?
   specification   ProductSpecification?
   faqs            FAQ[]
+  stockNotifications StockNotification[]
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
@@ -100,13 +102,28 @@ model Category {
   parentId    String?
   parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryTree")
-  products    Product[]
+  products    Product[] @relation("ProductPrimaryCategory") // Backwards compatibility
+  productCategories ProductCategory[] // Many-to-many relationship
   content     CategoryContent?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
   @@index([slug])
   @@index([parentId])
+}
+
+// Join table for many-to-many Product-Category relationship
+model ProductCategory {
+  id          String   @id @default(uuid())
+  productId   String
+  categoryId  String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([productId, categoryId])
+  @@index([productId])
+  @@index([categoryId])
 }
 
 model ProductContent {
@@ -281,5 +298,38 @@ model ScrapingJob {
   @@index([status])
   @@index([jobType])
   @@index([createdAt])
+}
+
+// User profile data (extends Supabase Auth users)
+// Supabase Auth handles authentication, this table stores additional profile data
+model UserProfile {
+  id            String              @id // Maps to Supabase Auth user.id (uuid)
+  email         String              @unique
+  firstName     String?
+  lastName      String?
+  phone         String?             // Full phone number with country code
+  phoneCountryCode String?          // Country code (e.g., "+61", "+1")
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  stockNotifications StockNotification[]
+
+  @@index([email])
+}
+
+model StockNotification {
+  id          String   @id @default(uuid())
+  userId      String   // Supabase Auth user ID
+  userProfile UserProfile? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  notified    Boolean  @default(false)
+  notifiedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+  @@index([notified])
 }
 

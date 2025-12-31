@@ -24,26 +24,6 @@ export async function GET(
         image: true,
         parentId: true,
         content: true,
-        products: {
-          take: 20,
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            price: true,
-            availability: true,
-            imageUrl: true,
-            images: true,
-            botanicalName: true,
-            commonName: true,
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-        _count: {
-          select: { products: true },
-        },
       },
     });
 
@@ -54,8 +34,50 @@ export async function GET(
       );
     }
 
+    // Fetch products using many-to-many relationship
+    const products = await prisma.product.findMany({
+      where: {
+        OR: [
+          { categoryId: category.id }, // Backwards compatibility
+          { categories: { some: { categoryId: category.id } } }, // Many-to-many relationship
+        ],
+      },
+      take: 20,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        price: true,
+        availability: true,
+        imageUrl: true,
+        images: true,
+        botanicalName: true,
+        commonName: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    const productCount = await prisma.product.count({
+      where: {
+        OR: [
+          { categoryId: category.id },
+          { categories: { some: { categoryId: category.id } } },
+        ],
+      },
+    });
+
+    const categoryWithProducts = {
+      ...category,
+      products,
+      _count: {
+        products: productCount,
+      },
+    };
+
     // BLOCK SUBCATEGORIES: Only return main categories
-    if (category.parentId !== null) {
+    if (categoryWithProducts.parentId !== null) {
       return NextResponse.json(
         { error: 'Subcategories are not supported' },
         { status: 404 }
@@ -63,14 +85,14 @@ export async function GET(
     }
 
     // BLOCK NON-MAIN CATEGORIES: Only allow the 15 main categories
-    if (!MAIN_CATEGORIES.includes(category.name as any)) {
+    if (!MAIN_CATEGORIES.includes(categoryWithProducts.name as any)) {
       return NextResponse.json(
         { error: 'Category not found' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(category);
+    return NextResponse.json(categoryWithProducts);
   } catch (error) {
     console.error('Error fetching category:', error);
     return NextResponse.json(

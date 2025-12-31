@@ -4,7 +4,8 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { ShoppingCart, Heart, Share2, Check, X } from "lucide-react"
+import { ShoppingCart, Heart, Share2, Check, X, Bell } from "lucide-react"
+import { StockNotificationModal } from "@/components/stock-notification-modal"
 
 interface ProductInfoProps {
   product: {
@@ -21,6 +22,7 @@ interface ProductInfoProps {
 export function ProductInfo({ product }: ProductInfoProps) {
   const [selectedSize, setSelectedSize] = useState(product.sizes[0])
   const [isFavorited, setIsFavorited] = useState(false)
+  const [showNotificationModal, setShowNotificationModal] = useState(false)
 
   return (
     <div className="space-y-6">
@@ -67,14 +69,21 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
       {/* Action Buttons */}
       <div className="space-y-3">
-        <Button
-          size="lg"
-          className="w-full bg-[#2d5016] hover:bg-[#2d5016]/90 text-white font-medium"
-          disabled={!product.inStock}
-        >
-          <ShoppingCart className="mr-2 h-5 w-5" />
-          Add to Cart
-        </Button>
+        {product.inStock ? (
+          <Button size="lg" className="w-full bg-[#2d5016] hover:bg-[#2d5016]/90 text-white font-medium">
+            <ShoppingCart className="mr-2 h-5 w-5" />
+            Add to Cart
+          </Button>
+        ) : (
+          <Button
+            size="lg"
+            className="w-full bg-[#3d6b1f] hover:bg-[#3d6b1f]/90 text-white font-medium"
+            onClick={() => setShowNotificationModal(true)}
+          >
+            <Bell className="mr-2 h-5 w-5" />
+            Notify Me When In Stock
+          </Button>
+        )}
 
         <div className="flex gap-3">
           <Button
@@ -137,6 +146,13 @@ export function ProductInfo({ product }: ProductInfoProps) {
           <span className="text-muted-foreground">Expert care support included</span>
         </div>
       </div>
+
+      {/* Stock Notification Modal */}
+      <StockNotificationModal
+        open={showNotificationModal}
+        onOpenChange={setShowNotificationModal}
+        productName={product.name}
+      />
     </div>
   )
 }

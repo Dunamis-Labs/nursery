@@ -9,26 +9,15 @@ import Link from "next/link"
 import Image from "next/image"
 
 // Mock cart data - in production this would come from a state management solution
-const initialCartItems = [
-  {
-    id: 1,
-    name: "Monstera Deliciosa",
-    botanical: "Monstera deliciosa",
-    price: 45.99,
-    quantity: 1,
-    size: 'Medium (6" pot)',
-    image: "/monstera-deliciosa-full-plant-pot.jpg",
-  },
-  {
-    id: 2,
-    name: "Snake Plant",
-    botanical: "Sansevieria trifasciata",
-    price: 32.99,
-    quantity: 2,
-    size: 'Small (4" pot)',
-    image: "/snake-plant-sansevieria-pot.jpg",
-  },
-]
+const initialCartItems: Array<{
+  id: number
+  name: string
+  botanical: string
+  price: number
+  quantity: number
+  size: string
+  image: string
+}> = []
 
 export function CartContent() {
   const [cartItems, setCartItems] = useState(initialCartItems)
@@ -49,16 +38,42 @@ export function CartContent() {
 
   if (cartItems.length === 0) {
     return (
-      <Card className="py-16">
-        <CardContent className="text-center">
-          <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h2 className="font-serif text-2xl font-bold mb-2">Your cart is empty</h2>
-          <p className="text-muted-foreground mb-6">Add some beautiful plants to get started</p>
-          <Button asChild className="bg-[#2d5016] hover:bg-[#2d5016]/90">
-            <Link href="/categories/indoor-plants">Browse Plants</Link>
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="max-w-2xl mx-auto">
+        <Card className="py-20">
+          <CardContent className="text-center space-y-6">
+            <div className="flex justify-center">
+              <div className="w-24 h-24 rounded-full bg-[#87a96b]/10 flex items-center justify-center">
+                <ShoppingBag className="h-12 w-12 text-[#87a96b]" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h2 className="font-serif text-3xl font-bold text-[#2d5016]">Your cart is empty</h2>
+              <p className="text-muted-foreground text-lg">
+                Looks like you haven't added anything to your cart yet.
+              </p>
+            </div>
+            <div className="pt-4">
+              <Button asChild size="lg" className="bg-[#2d5016] hover:bg-[#2d5016]/90 text-white">
+                <Link href="/categories">Browse All Plants</Link>
+              </Button>
+            </div>
+            <div className="pt-6 border-t">
+              <p className="text-sm text-muted-foreground mb-4">You might also like:</p>
+              <div className="flex flex-wrap justify-center gap-3">
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/categories/indoor-plants">Indoor Plants</Link>
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/categories/outdoor-plants">Outdoor Plants</Link>
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/categories/succulents">Succulents</Link>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 

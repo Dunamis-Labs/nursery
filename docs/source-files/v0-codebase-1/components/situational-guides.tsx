@@ -81,13 +81,16 @@ export function SituationalGuides() {
                           <span>{guide.readTime}</span>
                         </div>
                         {guide.finderLink && (
-                          <Link
-                            href="/plant-finder"
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              window.location.href = "/plant-finder"
+                            }}
                             className="text-xs text-secondary hover:text-primary transition-colors font-medium"
-                            onClick={(e) => e.stopPropagation()}
                           >
                             Try Plant Finder →
-                          </Link>
+                          </button>
                         )}
                       </div>
                     </div>
