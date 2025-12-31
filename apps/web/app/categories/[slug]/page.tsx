@@ -20,35 +20,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug: slugParam } = await params;
   const requestedSlug = slugParam.toLowerCase().trim();
   
-  // Map slug to category name (simple lookup)
-  const slugToName: Record<string, string> = {
-    'grasses': 'Grasses',
-    'hedging-and-screening': 'Hedging and Screening',
-    'palms,-ferns-and-tropical': 'Palms, Ferns & Tropical',
-    'trees': 'Trees',
-    'shrubs': 'Shrubs',
-    'groundcovers': 'Groundcovers',
-    'climbers': 'Climbers',
-    'conifers': 'Conifers',
-    'roses': 'Roses',
-    'succulents-and-cacti': 'Succulents & Cacti',
-    'citrus-and-fruit': 'Citrus & Fruit',
-    'herbs-and-vegetables': 'Herbs & Vegetables',
-    'water-plants': 'Water Plants',
-    'indoor-plants': 'Indoor Plants',
-    'garden-products': 'Garden Products',
-  };
-  
-  const categoryName = slugToName[requestedSlug];
-  if (!categoryName) {
-    notFound();
-  }
-  
-  // Find category by name
+  // Find category by slug directly - simple and straightforward
   const category = await prisma.category.findFirst({
     where: {
-      name: categoryName,
-      parentId: null,
+      slug: requestedSlug,
+      parentId: null, // Only main categories
     },
     select: {
       id: true,
