@@ -34,7 +34,7 @@ interface ProductGridProps {
   })[]
   filters: FilterState
   sortBy: string
-  categoryName: string
+  categoryName?: string
 }
 
 export function ProductGrid({ products, filters, sortBy, categoryName }: ProductGridProps) {
