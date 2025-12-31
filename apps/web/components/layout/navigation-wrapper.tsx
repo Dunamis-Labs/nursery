@@ -4,6 +4,9 @@ import { MAIN_CATEGORIES } from '@/lib/constants/categories';
 /**
  * Server component wrapper that fetches categories and passes them to Navigation
  */
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function NavigationWrapper() {
   // Lazy import prisma to avoid module evaluation error if DATABASE_URL is missing
   let prisma: any;
@@ -40,8 +43,6 @@ export async function NavigationWrapper() {
       orderBy: {
         name: 'asc',
       },
-      // Force fresh fetch (no cache)
-      cache: false,
     });
   } catch (dbError: any) {
     // Return empty navigation if database fails
