@@ -10,8 +10,6 @@ import { Loader2, CheckCircle, Edit2, X, Check, Mail, LogOut } from "lucide-reac
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Navigation } from "@/components/layout/navigation"
-import { Footer } from "@/components/layout/footer"
 import { MagicLinkLogin } from "@/components/magic-link-login"
 
 const COUNTRY_CODES = [
@@ -234,22 +232,16 @@ export function AccountPageClient() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Navigation />
-        <main className="flex-1 py-16 px-4">
-          <div className="container mx-auto max-w-md">
-            <MagicLinkLogin />
-          </div>
-        </main>
-        <Footer />
-      </div>
+      <main className="flex-1 py-16 px-4">
+        <div className="container mx-auto max-w-md">
+          <MagicLinkLogin />
+        </div>
+      </main>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navigation />
-      <main className="flex-1 py-16 px-4">
+    <main className="flex-1 py-16 px-4">
         <div className="container mx-auto max-w-4xl">
         <h1 className="font-serif text-4xl font-bold text-[#2d5016] mb-8">My Account</h1>
 
@@ -540,8 +532,6 @@ export function AccountPageClient() {
         </div>
         </div>
       </main>
-      <Footer />
-    </div>
   )
 }
 

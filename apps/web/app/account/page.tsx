@@ -1,6 +1,8 @@
 import { Suspense } from "react"
 import { AccountPageClient } from "./account-client"
 import { Loader2 } from "lucide-react"
+import { NavigationWrapper } from "@/components/layout/navigation-wrapper"
+import { Footer } from "@/components/layout/footer"
 
 export const metadata = {
   title: "My Account - The Plant Nursery",
@@ -17,9 +19,13 @@ function AccountPageLoading() {
 
 export default function AccountPage() {
   return (
-    <Suspense fallback={<AccountPageLoading />}>
-      <AccountPageClient />
-    </Suspense>
+    <div className="min-h-screen">
+      <NavigationWrapper />
+      <Suspense fallback={<AccountPageLoading />}>
+        <AccountPageClient />
+      </Suspense>
+      <Footer />
+    </div>
   )
 }
 

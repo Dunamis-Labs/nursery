@@ -15,7 +15,7 @@ interface CategoryGridProps {
 
 export function CategoryGrid({ categories }: CategoryGridProps) {
   return (
-    <section className="py-16 px-4">
+    <section id="shop-by-category" className="py-16 px-4 scroll-mt-20">
       <div className="container mx-auto">
         <div className="text-center mb-12">
           <h2 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4">Shop by Category</h2>

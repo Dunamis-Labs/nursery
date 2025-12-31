@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { NavigationWrapper } from '@/components/layout/navigation-wrapper';
 import { Footer } from '@/components/layout/footer';
+import { BlogContent } from '@/components/blog/blog-content';
 
 export const metadata: Metadata = {
   title: "Blog - Plant Care Tips & Gardening Advice | The Plant Nursery",
@@ -21,9 +22,7 @@ export default function BlogPage() {
             Plant care tips, gardening advice, and expert insights
           </p>
         </div>
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Blog posts coming soon...</p>
-        </div>
+        <BlogContent />
       </main>
       <Footer />
     </div>
