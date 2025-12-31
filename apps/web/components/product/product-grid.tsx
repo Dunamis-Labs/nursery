@@ -208,7 +208,7 @@ export function ProductGrid({ products, filters, sortBy, categoryName }: Product
             const imageUrl = localImages[0] || localImageUrl || "/logo.svg"
             
             return (
-              <ProductCard key={product.id} product={product} imageUrl={imageUrl} />
+              <ProductCard key={product.id} product={product} imageUrl={imageUrl} categoryName={categoryName} />
             )
           })}
         </div>
@@ -253,7 +253,8 @@ export function ProductGrid({ products, filters, sortBy, categoryName }: Product
 // Separate component for product card with image error handling
 function ProductCard({ 
   product, 
-  imageUrl 
+  imageUrl,
+  categoryName
 }: { 
   product: Product & {
     category?: { name: string; slug: string } | null
@@ -269,6 +270,7 @@ function ProductCard({
     } | null
   }
   imageUrl: string
+  categoryName?: string
 }) {
   const [imgSrc, setImgSrc] = useState(imageUrl)
   const [hasError, setHasError] = useState(false)
@@ -321,10 +323,17 @@ function ProductCard({
             {product.commonName || product.name}
           </h3>
           {/* Hide botanical names for Garden Products category */}
-          {categoryName !== 'Garden Products' && product.commonName && product.name && (
+          {categoryName && categoryName !== 'Garden Products' && product.commonName && product.name && (
             <p className="font-mono text-sm italic text-[#6b7280] mb-3">{product.name}</p>
           )}
-          {categoryName !== 'Garden Products' && !product.commonName && product.botanicalName && (
+          {categoryName && categoryName !== 'Garden Products' && !product.commonName && product.botanicalName && (
+            <p className="font-mono text-sm italic text-[#6b7280] mb-3">{product.botanicalName}</p>
+          )}
+          {/* Fallback: show botanical name if categoryName is not provided */}
+          {!categoryName && product.commonName && product.name && (
+            <p className="font-mono text-sm italic text-[#6b7280] mb-3">{product.name}</p>
+          )}
+          {!categoryName && !product.commonName && product.botanicalName && (
             <p className="font-mono text-sm italic text-[#6b7280] mb-3">{product.botanicalName}</p>
           )}
           <div className="flex items-center justify-between mb-3">
